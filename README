@@ -1,0 +1,21 @@
+/********************************************************
+ * @author  Airead Fan <fgh1987168@gmail.com>		*
+ * @date    2011 9月 21 10:00:04 CST			*
+ ********************************************************
+ *		after studying C 65 days		*
+ *		after studying APUE 30 days		*
+ ********************************************************/
+
+digit-box: multimedia show picture program
+=========================================================
+
+Main functions
+---------------------------------------------------------
+  1. Extract JPEG files (libjpeg)
+  2. Background music
+  3. User key control
+  4. Picture effects show
+  5. Directory traversal
+  6. Framebuffer application (memory mapped)
+  7. U disk detection (file I/O)
+  8. Weather
