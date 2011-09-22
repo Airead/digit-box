@@ -14,6 +14,15 @@
 #define DB_LIST_MAX 255
 #define DB_NAME_MAX 255
 
+#define DB_TEST_MODE 0
+#define DB_VIEW_MODE 2
+
+/* (n+1)*sp + n*si = 100 , video mode: 800x600 */
+#define DB_VIEW_MODE_NUM 3		/* matrix num */
+#define DB_VIEW_MODE_PADSPACE 7		/* pad: H:W = 8:6 */
+#define DB_VIEW_MODE_PADIMAGE 24	/* pad: H:W = 8:6 */
+
+
 int thread_key_control_start(void);
 void *thread_key_control(void *arg);
 int stty_echo_off(void);

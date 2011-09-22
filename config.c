@@ -16,12 +16,12 @@
 /*
  * open digit-box config file
  */
-FILE *config_open(char *filename)
+FILE *config_open(char *filename, char *mode)
 {
 	FILE *fp;
 
 	//FILE *fopen(const char *path, const char *mode);
-	if((fp = fopen(filename, "rw")) == NULL){
+	if((fp = fopen(filename, mode)) == NULL){
 		fprintf(stderr, "open %s failed: %s\n", filename, 
 			strerror(errno));
 		return NULL;

@@ -9,29 +9,38 @@
 #ifndef DB_MAINDEAL_H
 #define DB_MAINDEAL_H
 
-#define DB_TEST_MODE 0
-#define DB_VIEW_MODE 0
+#include "digitbox.h"
+#include "framebuffer.h"
+#include "screen.h"
 
-#if 0
+
+struct mainstatus{ 
+	int mode;
 	FB fb;			/* framebuffer struct */
-	FILE *config_fp;	/* pointer to config file */
-	char *value;		/* value of config file */
+	FB_SCREEN screen;
 	char mp3_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/mp3/ *.mp3 */
 	int mp3_list_len;
+	int mp3_cur_pos;
+	pid_t mp3_pid;				     /* mp3 process id */
 	char img_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/img/ *.jpg */
 	int img_list_len;
-	pthread_t tid_key_ctrl;			     /* key control thread id */
-	int errorcode;				     /* errorcode for thread */
-	char udisk_path[DB_NAME_MAX + 1];
-	int running;		/* 1 loop, 2 stop */
-	uint16_t cur_key_code;
-
-#endif
-
-struct mainstatus{
-	int mode;
+	int img_cur_pos;	/* current show image */
+	FB_IMAGE img_list_mini[DB_LIST_MAX]; /* mini image */
+	int img_mini_cur_pos;
 };
 
-int common_dealcode(struct mainstatus *status, uint16_t code);
+int maindeal_mainstatus_init(struct mainstatus *status);
+int maindeal_mainstatus_destory(struct mainstatus *status);
+int maindeal_common_dealcode(struct mainstatus *status, uint16_t code);
+int maindeal_mode(struct mainstatus *status, uint16_t code);
+int maindeal_option(struct mainstatus *status, uint16_t code);
+int maindeal_img_setcurpos(struct mainstatus *status, int num);
+int maindeal_option_test(struct mainstatus *status, uint16_t code);
+int maindeal_img_show(struct mainstatus *status);
+int maindeal_mp3_play(struct mainstatus *status);
+int maindeal_mp3_play_init(struct mainstatus *status);
+int maindeal_option_view(struct mainstatus *status, uint16_t code);
+int maindeal_img_view(struct mainstatus *status);
+int maindeal_img_get_minimg(struct mainstatus *status);
 
 #endif

@@ -49,7 +49,7 @@ int resource_common_list(char *usbpath, char list[][DB_NAME_MAX + 1], char *type
 	}
 
 	//int resource_get_list(DIR *dirp, char list[][DB_NAME_MAX + 1], char *type);
-	list_len = resource_get_list(dirp, list, type);
+	list_len = resource_get_list(dirp, list, path_com, type);
 
 	//int closedir(DIR *dirp);
 	closedir(dirp);
@@ -57,7 +57,8 @@ int resource_common_list(char *usbpath, char list[][DB_NAME_MAX + 1], char *type
 	return list_len;		/* list length */
 }
 
-int resource_get_list(DIR *dirp, char list[][DB_NAME_MAX + 1], char *type)
+int resource_get_list(DIR *dirp, char list[][DB_NAME_MAX + 1], 
+		      char *path_com, char *type)
 {
 	struct dirent *direntp;
 	int list_len;
@@ -76,8 +77,8 @@ int resource_get_list(DIR *dirp, char list[][DB_NAME_MAX + 1], char *type)
 			if(strcmp(p, type) == 0){
 				memset(list[list_len], 0, DB_NAME_MAX + 1);
 
-				strncpy(list[list_len++], direntp->d_name,
-					DB_NAME_MAX);
+				snprintf(list[list_len++], DB_NAME_MAX,"%s/%s",
+					 path_com, direntp->d_name);
 			}
 		}
 		
@@ -98,3 +99,4 @@ int resource_get_list(DIR *dirp, char list[][DB_NAME_MAX + 1], char *type)
 
 	return list_len;
 }
+

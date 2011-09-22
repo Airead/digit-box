@@ -20,124 +20,47 @@
 #include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "digitbox.h"
-#include "framebuffer.h"
 #include "config.h"
-#include "udisk.h"
 #include "resource.h"
 #include "maindeal.h"
+#include "screen.h"
 
 uint16_t global_key_code;	/* pressed key code */
 pthread_mutex_t key_code_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int main(int argc, char *argv[])
 {	
-#if _DEBUG_
-	char *debug_p;
-	int debug_i;
-#endif 
 	struct mainstatus status;
-	FB fb;			/* framebuffer struct */
-	FILE *config_fp;	/* pointer to config file */
-	char *value;		/* value of config file */
-	char mp3_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/mp3/ *.mp3 */
-	int mp3_list_len;
-	char img_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/img/ *.jpg */
-	int img_list_len;
+
 	pthread_t tid_key_ctrl;			     /* key control thread id */
 	int errorcode;				     /* errorcode for thread */
-	char udisk_path[DB_NAME_MAX + 1];
+
 	int running;		/* 1 loop, 2 stop */
 	uint16_t cur_key_code;
 
 	/*
 	 * Initialize everything
-	 *   1. read digitbox.conf
-	 *   2. initialize framebuffer device
 	 *   3. initialize user key control
 	 *   4. initialize weather data
 	 *   5. turn off echo
 	 *   6. init global_key_code_mutex
 	 *   7. start key control thread
 	 */
-
-	//FILE *config_open(char *filename);
-	if((config_fp = config_open("digitbox.conf")) == NULL){
-		fprintf(stderr, "can't open digitbox.conf: %s\n", 
-			strerror(errno));
+	
+	if(maindeal_mainstatus_init(&status) < 0){
+		fprintf(stderr, "maindeal_mainstatus_init() failed\n");
 		exit(1);
 	}
 
-#if _DEBUG_
-	
-	//char *config_getvalue_byname(FILE *fp, char *name);
-	debug_p = config_getvalue_byname(config_fp, "fb_dev");
-	fprintf(stdout, "fb_dev: %s\n", debug_p);
-
-	debug_p = config_getvalue_byname(config_fp, "input_dev");
-	fprintf(stdout, "input_dev: %s\n", debug_p);
-#endif
-
-	value = config_getvalue_byname(config_fp, "fb_dev");
-	//int fb_open(char *fbname, FB *fbp);
-	if(fb_open(value, &fb) < 0){
-		fprintf(stderr, "init framebuffer failed\n");
-		exit(1);
-	}
-
-	//int config_close(FILE *fp);
-	config_close(config_fp);
-	
+	/* close echo */
 	stty_echo_off();
 
 	//int thread_key_control_start(FILE *fp);
 	tid_key_ctrl = thread_key_control_start();
 	
-
-	/*
-	 * Detect U disk and mount it
-	 * Read mp3/image list
-	 */
-
-	/* Detect U disk anm mount it */
-#if _DEBUG_VIR		    /* should place after actual udisk function */
-	
-	memset(udisk_path, 0, DB_NAME_MAX + 1);
-	//char *strncpy(char *dest, const char *src, size_t n);
-	strncpy(udisk_path, "/home/airead/study/virusb", DB_NAME_MAX);
-
-	/* udisk_path first be used for device name */
-	//int udisk_detect_vir(char *devname);
-	udisk_detect_vir(udisk_path);
-
-	//int udisk_mount_vir(char *devname);
-	udisk_mount_vir(udisk_path);
-
-#endif
-	
-	/* Read mp3/image list */
-	//int resource_common_list(char *usbpath, char list[][DB_NAME_MAX + 1], 
-	//                        char *type);
-	if((img_list_len = resource_common_list(udisk_path, img_list, "jpg")) < 0){
-		fprintf(stderr, "resource_common_list(jpg) failed\n");
-	}
-
-	if((mp3_list_len = resource_common_list(udisk_path, mp3_list, "mp3")) < 0){
-		fprintf(stderr, "resource_common_list(jpg) failed\n");
-	}
-
-#if _DEBUG_
-	fprintf(stdout, "--------------------img list--------------------\n");
-	for(debug_i = 0; debug_i < img_list_len; debug_i++){
-		fprintf(stdout, "%3d: %s\n", debug_i, img_list[debug_i]);
-	}
-
-	fprintf(stdout, "--------------------mp3 list--------------------\n");
-	for(debug_i = 0; debug_i < mp3_list_len; debug_i++){
-		fprintf(stdout, "%3d: %s\n", debug_i, mp3_list[debug_i]);
-	}
-#endif
-
 	/*
 	 * Main loop
 	 *   1. show picture
@@ -147,21 +70,10 @@ int main(int argc, char *argv[])
 	cur_key_code = 0;
 	while(running){
 		common_change_code(&cur_key_code, global_key_code);
-		common_change_code(&global_key_code, 0);
 
-		
-		common_dealcode(&status, cur_key_code);
-		switch(cur_key_code){
-		case 0:
-			break;
-		case KEY_Q:
-			running = 0;
-			break;
-		case KEY_UP:
-			fprintf(stdout, "UP\n");
-			break;
-		default:
-			break;
+		if(global_key_code != 0){
+			common_change_code(&global_key_code, 0);
+			maindeal_common_dealcode(&status, cur_key_code);
 		}
 
 		usleep(33);
@@ -180,14 +92,15 @@ int main(int argc, char *argv[])
 	 *   2. umount U disk
 	 *   3. trun on echo
 	 *   4. destory key_code_mutex
+	 *   5. kill mp3 process
 	 */
 			   
 	//int fb_close(FB *fbp);
-	fb_close(&fb);
+	fb_close(&status.fb);
 
 	//int umount(const char *target);
 			   
-	stty_echo_on();
+
 			   
 	//int pthread_mutex_destroy(pthread_mutex_t *mutex);
 	if((errorcode = pthread_mutex_destroy(&key_code_mutex)) != 0){
@@ -195,6 +108,11 @@ int main(int argc, char *argv[])
 			strerror(errno));
 	}
 	
+	kill(status.mp3_pid, SIGINT);
+	waitpid(status.mp3_pid, NULL, 0);
+
+	stty_echo_on();
+
 	return 0;
 }
 
@@ -227,24 +145,26 @@ int thread_key_control_start(void)
 void *thread_key_control(void *arg)
 {
 	int in_fd;
-	FILE *fp;
+	FILE *config_fp;
 	char *value;
 	struct input_event ev[64];
 	int running;
 	ssize_t rb;
 	int i;
 
-	//FILE *fopen(const char *path, const char *mode);
-	if((fp = fopen("digitbox.conf", "rw")) == NULL){
+	//FILE *config_open(char *filename);
+	if((config_fp = config_open("digitbox.conf", "r")) == NULL){
 		fprintf(stderr, "fopen config file failed\n");
+		common_change_code(&global_key_code, KEY_Q);
 		pthread_exit((void *)-1);
 	}
+
 
 #if _DEBUG_
 	fprintf(stdout, "key control pthread start...\n");
 #endif
 
-	value = config_getvalue_byname(fp, "input_dev");
+	value = config_getvalue_byname(config_fp, "input_dev");
 
 #if _DEBUG_
 //	fprintf(stdout, "value = %s\n", value);
@@ -253,16 +173,13 @@ void *thread_key_control(void *arg)
 	//int open(const char *pathname, int flags);
 	if((in_fd = open(value, O_RDONLY)) < 0){
 		fprintf(stderr, "open %s failed: %s\n", value, strerror(errno));
-		exit(1);
+		common_change_code(&global_key_code, KEY_Q);
+		pthread_exit((void *)1);
 	}else{
 		fprintf(stdout, "open %s successful\n", value);
 	}
 	
 #if 0
-/*
- * The event structure itself
- */
-
 	struct input_event {
 		struct timeval time;
 		__u16 type;
@@ -277,6 +194,7 @@ void *thread_key_control(void *arg)
 		rb = read(in_fd, ev, sizeof(ev));
 		if(rb < (int)sizeof(struct input_event)){
 			perror("read error");
+			common_change_code(&global_key_code, KEY_Q);
 			pthread_exit((void *)1);
 		}
 
@@ -291,7 +209,7 @@ void *thread_key_control(void *arg)
 					common_change_code(&global_key_code,
 							   ev[i].code);
 					if(ev[i].code == KEY_Q){
-						pthread_exit(0);
+						running = 0;
 					}
 				}
 			}
@@ -365,8 +283,6 @@ int stty_echo_off(void)
 
 	return 0;
 }
-	
-
 
 int stty_echo_on(void)
 {
