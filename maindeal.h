@@ -12,6 +12,7 @@
 #include "digitbox.h"
 #include "framebuffer.h"
 #include "screen.h"
+#include "pixel.h"
 
 
 struct mainstatus{ 
@@ -27,6 +28,7 @@ struct mainstatus{
 	int img_cur_pos;	/* current show image */
 	FB_IMAGE img_list_mini[DB_LIST_MAX]; /* mini image */
 	int img_mini_cur_pos;
+	int img_mini_offset;
 };
 
 int maindeal_mainstatus_init(struct mainstatus *status);
@@ -42,5 +44,7 @@ int maindeal_mp3_play_init(struct mainstatus *status);
 int maindeal_option_view(struct mainstatus *status, uint16_t code);
 int maindeal_img_view(struct mainstatus *status);
 int maindeal_img_get_minimg(struct mainstatus *status);
+int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
+			    COLOR_32 startcolor, COLOR_32 stopcolor, int thick);
 
 #endif

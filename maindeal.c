@@ -21,7 +21,9 @@
 #include "jpeg.h"
 #include "config.h"
 #include "udisk.h"
+#include "pixel.h"
 #include "resource.h"
+#include "plane.h"
 
 /*
  * initialize mainstatus
@@ -75,8 +77,10 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	//int fb_screen_init(FB_SCREEN *screenp, FB *fbp);
 	fb_screen_init(&status->screen, &status->fb);
 
+	/* initialize num */
 	status->img_cur_pos = 0;
 	status->img_mini_cur_pos = 0;
+	status->img_mini_offset = 0;
 	status->mp3_cur_pos = 0;
 	status->mp3_pid = 0;
 
@@ -226,6 +230,43 @@ int maindeal_img_setcurpos(struct mainstatus *status, int num)
 	}
 
 	return status->img_cur_pos;
+}
+
+/*
+ * set image current pos 
+ *
+ * return current pos after change
+ */
+int maindeal_img_mini_setoffset(struct mainstatus *status, int num)
+{
+	int len;
+	
+	len = DB_VIEW_MODE_NUM * DB_VIEW_MODE_NUM;
+	
+	status->img_mini_offset += num;
+
+	if(status->img_mini_offset >= len){
+		status->img_mini_offset %= len;
+		/* deal LETT and RIGHT */
+		if(abs(num) != 1){ 
+			status->img_mini_offset++;
+		}
+		if(status->img_mini_offset == 3){ /* 2 --> 0 */
+			status->img_mini_offset = 0;
+		}
+	}
+	while(status->img_mini_offset < 0){
+		status->img_mini_offset += len;
+		/* deal LETT and RIGHT */
+		if(abs(num) != 1){
+			status->img_mini_offset--;
+		}
+		if(status->img_mini_offset == 5){ /* 6 --> 8 */
+			status->img_mini_offset = 8;
+		}
+	}
+
+	return status->img_mini_offset;
 }
 
 /*
@@ -420,10 +461,34 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 		maindeal_img_mini_setcurpos(status, 9);
 		maindeal_img_view(status);
 		break;
+	case KEY_LEFT:
+		maindeal_img_mini_setoffset(status, -3);
+		maindeal_img_view(status);
+		break;
+	case KEY_RIGHT:
+		maindeal_img_mini_setoffset(status, 3);
+		maindeal_img_view(status);
+		break;
+	case KEY_UP:
+		maindeal_img_mini_setoffset(status, -1);
+		maindeal_img_view(status);
+		break;
+	case KEY_DOWN:
+		maindeal_img_mini_setoffset(status, 1);
+		maindeal_img_view(status);
+		break;
+	case KEY_ENTER:
+		status->img_cur_pos = 
+			status->img_mini_cur_pos + status->img_mini_offset;
+		maindeal_img_show(status);
+		break;
+	case KEY_BACKSPACE:
+		maindeal_img_view(status);
+		break;
 	default:
 		break;
 	}
-
+	
 	return 0;
 }
 
@@ -450,7 +515,7 @@ int maindeal_img_view(struct mainstatus *status)
 			ypos = (j + 1) * sp * 6 + j * si * 6;
 			//int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
 			fb_image_setpos(&status->img_list_mini[k], xpos, ypos);
-			
+	
 			//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
 			fb_screen_add_image(&status->screen, 
 					    &status->img_list_mini[k]);
@@ -466,6 +531,27 @@ int maindeal_img_view(struct mainstatus *status)
 #endif
 	
 	fb_screen_update(&status->screen);
+
+	/* draw unselected frame */
+	k = status->img_mini_cur_pos;
+	for(i = 0; i < DB_VIEW_MODE_NUM; i++){
+		for(j = 0; j < DB_VIEW_MODE_NUM; j++){
+			//int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
+			//    COLOR_32 startcolor, COLOR_32 stopcolor, int thick);
+			maindeal_img_frame_draw(status, k, 50, 255, 3);
+		
+			k++;
+		}
+	}
+
+#if _DEBUG_
+//	fprintf(stdout, "%s: img_mini_offset = %d\n", __func__, 
+//		status->img_mini_offset);
+#endif
+
+	/* draw selected frame */
+	maindeal_img_frame_draw(status, status->img_mini_cur_pos + 
+				status->img_mini_offset, 210, 255, 3);
 
 	return 0;
 }
@@ -495,6 +581,10 @@ int maindeal_img_get_minimg(struct mainstatus *status)
 			return -1;
 		}
 
+		
+		fprintf(stdout, "get mini image: %s\n", 
+			strrchr(status->img_list[i], '/') + 1);
+		
 		//int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
 		//                    int img_width, int img_height)
 		fb_image_getmini(&img_tmp, &status->img_list_mini[i], 
@@ -504,6 +594,37 @@ int maindeal_img_get_minimg(struct mainstatus *status)
 		
 		//int fb_image_destory(FB_IMAGE *imagep);
 		fb_image_destory(&img_tmp);
+	}
+
+	return 0;
+}
+
+/*
+ * Draw a frame for image,
+ * @imgnum: status->img_list_mini[imgnum];
+ */
+int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
+			    COLOR_32 startcolor, COLOR_32 stopcolor, int thick)
+{
+	int i;
+	int tmp;		/* RGB temporary value */
+	COLOR_32 color;
+	FB_IMAGE *imagep;
+	FB_POINT point1;
+	FB_RECT rect;
+
+	imagep = &status->img_list_mini[imgnum];
+	
+	for(i = 0; i < thick; i++){
+		tmp = startcolor + (stopcolor - startcolor) / thick * i;
+		color = fb_formatRGB(tmp, tmp, tmp);	
+
+		fb_set_pixel(&point1, imagep->x - i - 1, imagep->y - i - 1 , color);
+		fb_rect_set(&rect, &point1, imagep->width + 2 * i, 
+			    imagep->height + 2 * i);
+
+		//int fb_rect_draw_nonfill(FB *fbp, FB_RECT *rectp);
+		fb_rect_draw_nofill(&status->fb, &rect);
 	}
 
 	return 0;

@@ -9,6 +9,10 @@
 digit-box: multimedia show picture program
 =========================================================
 
+Evironment:
+  1. This software works ONLY under the framebuffer 800x600 24bit mode
+  2. You SHOULD change value of `digitbox.conf' to your own system
+
 Main functions
 ---------------------------------------------------------
   1. Extract JPEG files (libjpeg)
