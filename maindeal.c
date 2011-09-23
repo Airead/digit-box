@@ -39,14 +39,6 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	FILE *config_fp;	/* pointer to config file */
 	char *value;		/* value of config file */
 
-#if 0
-	struct mainstatus{
-		char mp3_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/mp3/ *.mp3 */
-		int mp3_list_len;
-		char img_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/img/ *.jpg */
-		int img_list_len;
-	};
-#endif
 	status->mode = DB_TEST_MODE;
 	//FILE *config_open(char *filename);
 	if((config_fp = config_open("digitbox.conf", "r")) == NULL){
@@ -147,7 +139,12 @@ int maindeal_mainstatus_init(struct mainstatus *status)
  */
 int maindeal_mainstatus_destory(struct mainstatus *status)
 {
-	
+	//int fb_screen_destory(FB_SCREEN *screenp);
+	fb_screen_destory(&status->screen);
+
+	//int fb_close(FB *fbp);
+	fb_close(&status->fb);
+
 	return 0;
 }
 
@@ -158,6 +155,7 @@ int maindeal_common_dealcode(struct mainstatus *status, uint16_t code)
 {
 	maindeal_mode(status, code);
 	maindeal_option(status, code);
+
 	return 0;
 }
 
@@ -388,6 +386,111 @@ int maindeal_img_show(struct mainstatus *status)
 }
 
 /*
+ * Show image at current pos (fullscreen mode)
+ */
+int maindeal_img_show_fullscr(struct mainstatus *status)
+{
+	FB_IMAGE image, retimg;
+	int i;
+	float proportion;
+
+	i = status->img_cur_pos;
+
+#if _DEBUG_
+//	fprintf(stdout, "ready to open %s\n", status->img_list[i]);
+#endif
+		
+	//int fb_load_jpeg(FB_IMAGE *imagep, char *filename)
+	if(fb_load_jpeg(&image, status->img_list[i]) < 0){
+		fprintf(stderr, "%s: fb_load_jpeg() %s failed\n",
+			__func__, status->img_list[i]);
+			
+		return -1;
+	}
+		
+	//int fb_screen_optimize_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+	if(fb_screen_optimize_image(&status->screen, &image) < 0){
+		fprintf(stderr, "%s: fb_screen_optimize_image %s failed\n",
+			__func__, status->img_list[i]);
+			
+		return -1;
+	}
+
+	/* clear screen */
+	fb_screen_clear(&status->screen);
+
+	fb_image_setpos(&image, 0, 0);
+
+	proportion = 0.05;	
+	while(proportion < 1){
+		//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, float proportionx, float proportiony);
+		fb_image_enlarge(&image, &retimg, proportion, proportion);
+
+		//int fb_image_enlarge_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
+		fb_image_enlarge_setcenter(&image, &retimg);
+
+		//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+		fb_screen_add_image_fullscr(&status->screen, &retimg);
+		
+		fb_screen_update(&status->screen);
+
+		fb_image_destory(&retimg);
+		
+		proportion *= 1.1;
+	}
+	//int fb_image_destory(FB_IMAGE *imagep);
+	fb_image_destory(&image);
+
+	return 0;
+}
+
+/*
+ * Show image at current pos (fullscreen mode)
+ */
+int maindeal_img_show_fullscr_bak(struct mainstatus *status)
+{
+	FB_IMAGE image;
+	int i;
+
+	i = status->img_cur_pos;
+
+#if _DEBUG_
+//	fprintf(stdout, "ready to open %s\n", status->img_list[i]);
+#endif
+		
+	//int fb_load_jpeg(FB_IMAGE *imagep, char *filename)
+	if(fb_load_jpeg(&image, status->img_list[i]) < 0){
+		fprintf(stderr, "%s: fb_load_jpeg() %s failed\n",
+			__func__, status->img_list[i]);
+			
+		return -1;
+	}
+		
+	//int fb_screen_optimize_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+	if(fb_screen_optimize_image(&status->screen, &image) < 0){
+		fprintf(stderr, "%s: fb_screen_optimize_image %s failed\n",
+			__func__, status->img_list[i]);
+			
+		return -1;
+	}
+
+	/* clear screen */
+	fb_screen_clear(&status->screen);
+
+	fb_image_setpos(&image, 0, 0);
+
+	//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+	fb_screen_add_image_fullscr(&status->screen, &image);
+
+	fb_screen_update(&status->screen);
+
+	//int fb_image_destory(FB_IMAGE *imagep);
+	fb_image_destory(&image);
+
+	return 0;
+}
+
+/*
  * close playing process
  */
 int maindeal_mp3_play_init(struct mainstatus *status)
@@ -480,7 +583,7 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 	case KEY_ENTER:
 		status->img_cur_pos = 
 			status->img_mini_cur_pos + status->img_mini_offset;
-		maindeal_img_show(status);
+		maindeal_img_show_fullscr(status);
 		break;
 	case KEY_BACKSPACE:
 		maindeal_img_view(status);
@@ -497,10 +600,16 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
  */
 int maindeal_img_view(struct mainstatus *status)
 {
+	FB_IMAGE retimg;
 	int i, j, k;
 	int sp;			/* space padding */
 	int si;			/* image padding */
 	int xpos, ypos;
+	int loc;
+	float proportion;
+
+	loc = status->img_mini_cur_pos + status->img_mini_offset;
+	proportion = 1;
 
 	//int fb_screen_clear(FB_SCREEN *screenp);
 	fb_screen_clear(&status->screen);
@@ -515,31 +624,15 @@ int maindeal_img_view(struct mainstatus *status)
 			ypos = (j + 1) * sp * 6 + j * si * 6;
 			//int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
 			fb_image_setpos(&status->img_list_mini[k], xpos, ypos);
+
+			//int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
+			//    COLOR_32 startcolor, COLOR_32 stopcolor, int thick);
+			maindeal_img_frame_draw(status, &status->img_list_mini[k], 50, 255, 3);
 	
+
 			//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
 			fb_screen_add_image(&status->screen, 
 					    &status->img_list_mini[k]);
-			k++;
-		}
-	}
-
-
-#if 0       
-	fb_image_setpos(&status->img_list_mini[2], 1, 1);
-	//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
-	fb_screen_add_image(&status->screen, &status->img_list_mini[2]);
-#endif
-	
-	fb_screen_update(&status->screen);
-
-	/* draw unselected frame */
-	k = status->img_mini_cur_pos;
-	for(i = 0; i < DB_VIEW_MODE_NUM; i++){
-		for(j = 0; j < DB_VIEW_MODE_NUM; j++){
-			//int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
-			//    COLOR_32 startcolor, COLOR_32 stopcolor, int thick);
-			maindeal_img_frame_draw(status, k, 50, 255, 3);
-		
 			k++;
 		}
 	}
@@ -549,9 +642,28 @@ int maindeal_img_view(struct mainstatus *status)
 //		status->img_mini_offset);
 #endif
 
-	/* draw selected frame */
-	maindeal_img_frame_draw(status, status->img_mini_cur_pos + 
-				status->img_mini_offset, 210, 255, 3);
+	while(proportion < 1.1){
+		//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
+		//                    float proportionx, float proportiony)
+		fb_image_enlarge(&status->img_list_mini[loc], &retimg,
+				 proportion, proportion);
+
+		
+		//int fb_image_entlage_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
+		fb_image_enlarge_setcenter(&status->img_list_mini[loc], &retimg);
+
+		/* draw selected frame */
+		maindeal_img_frame_draw(status, &retimg, 190, 255, 4);
+
+		fb_screen_add_image(&status->screen, &retimg);
+
+		fb_screen_update(&status->screen);
+		
+		fb_image_destory(&retimg);
+		proportion += 0.01;
+	}
+
+
 
 	return 0;
 }
@@ -603,18 +715,15 @@ int maindeal_img_get_minimg(struct mainstatus *status)
  * Draw a frame for image,
  * @imgnum: status->img_list_mini[imgnum];
  */
-int maindeal_img_frame_draw(struct mainstatus *status, int imgnum, 
+int maindeal_img_frame_draw(struct mainstatus *status, FB_IMAGE *imagep, 
 			    COLOR_32 startcolor, COLOR_32 stopcolor, int thick)
 {
 	int i;
 	int tmp;		/* RGB temporary value */
 	COLOR_32 color;
-	FB_IMAGE *imagep;
 	FB_POINT point1;
 	FB_RECT rect;
 
-	imagep = &status->img_list_mini[imgnum];
-	
 	for(i = 0; i < thick; i++){
 		tmp = startcolor + (stopcolor - startcolor) / thick * i;
 		color = fb_formatRGB(tmp, tmp, tmp);	
@@ -624,8 +733,9 @@ int maindeal_img_frame_draw(struct mainstatus *status, int imgnum,
 			    imagep->height + 2 * i);
 
 		//int fb_rect_draw_nonfill(FB *fbp, FB_RECT *rectp);
-		fb_rect_draw_nofill(&status->fb, &rect);
+		fb_rect_draw_nofill_screen(&status->screen, &rect);
 	}
 
 	return 0;
 }
+

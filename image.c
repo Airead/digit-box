@@ -351,10 +351,10 @@ int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, float proportionx, flo
 /*
  * set retimgp center
  */
-int fb_image_entlage_setcenter(FB_IMAGE *imagep, FB_IMAGE *retimgp)
+int fb_image_enlarge_setcenter(FB_IMAGE *imagep, FB_IMAGE *retimgp)
 {
-	retimgp->x = imagep->x - (imagep->width / 2) * retimgp->proportionx;
-	retimgp->y = imagep->y - (imagep->height / 2) * retimgp->proportiony;
+	retimgp->x = imagep->x - imagep->width / 2 * (retimgp->proportionx - 1);
+	retimgp->y = imagep->y - imagep->height / 2 * (retimgp->proportiony - 1);
 
 	return 0;
 }
@@ -374,13 +374,13 @@ int fb_image_setpos(FB_IMAGE *imagep, int x, int y)
 /*
  * Get image's mini mirror
  */
-int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
+int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *minimgp, 
 		     int img_width, int img_height)
 {
 	int i, j, k;
-	int x, y;
+	int x, y, offx, offy;
 	float px, py;
-	unsigned long ret_loc, img_loc;
+	unsigned long mini_loc, img_loc, offset;
 
 	if(imagep->width > img_width && imagep->height > img_height){
 		px = img_width / (float)imagep->width;
@@ -391,30 +391,40 @@ int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *retimgp,
 	}
 
 	if(px > py){
+		offx = (img_width - imagep->width * py) / 2;
+		offy = 0;
+
 		px = py;
 	}else{
+		offx = 0;
+		offy = (img_height - imagep->height * px) / 2;
+		
 		py = px;
 	}
 
-	retimgp->components = imagep->components;
-	retimgp->width = imagep->width * px;
-	retimgp->height = imagep->height * py;
-	retimgp->imagesize = retimgp->width * retimgp->height * retimgp->components;
-	retimgp->proportionx = px;
-	retimgp->proportiony = py;
-	retimgp->x = imagep->x;
-	retimgp->y = imagep->y;
-	retimgp->imagestart = malloc(sizeof(char) * retimgp->imagesize);
+	minimgp->components = imagep->components;
+	minimgp->width = img_width;
+	minimgp->height = img_height;
+	minimgp->imagesize = minimgp->width * minimgp->height * minimgp->components;
+	minimgp->proportionx = px;
+	minimgp->proportiony = py;
+	minimgp->x = imagep->x;
+	minimgp->y = imagep->y;
+	minimgp->imagestart = malloc(sizeof(char) * minimgp->imagesize);
 
-	for(i = 0; i < retimgp->height; i++){
-		for(j = 0; j < retimgp->width; j++){
+	offset = (offy * minimgp->width + offx) * minimgp->components;
+
+	memset(minimgp->imagestart, 0, minimgp->imagesize);
+
+	for(i = 0; i < minimgp->height; i++){
+		for(j = 0; j < minimgp->width; j++){
 			y = i / py;
 			x = j / px;
 			if(x < imagep->width && y < imagep->height){
 				img_loc = (y * imagep->width + x) * imagep->components;
-				ret_loc = (i * retimgp->width + j) * retimgp->components;
+				mini_loc = (i * minimgp->width + j) * minimgp->components + offset;
 				for(k = 0; k < 4; k++){
-					retimgp->imagestart[ret_loc + k] = 
+					minimgp->imagestart[mini_loc + k] = 
 						imagep->imagestart[img_loc + k];
 				}
 			}

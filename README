@@ -12,6 +12,7 @@ digit-box: multimedia show picture program
 Evironment:
   1. This software works ONLY under the framebuffer 800x600 24bit mode
   2. You SHOULD change value of `digitbox.conf' to your own system
+  3. Run digitbox as root, beause it read the input device
 
 Main functions
 ---------------------------------------------------------

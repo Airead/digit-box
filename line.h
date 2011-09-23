@@ -13,5 +13,6 @@
 #include "pixel.h"
 
 int fb_draw_line(FB *fbp, FB_POINT *point1, FB_POINT *point2);
+int fb_draw_line_screen(FB_SCREEN *screenp, FB_POINT *point1, FB_POINT *point2);
 
 #endif

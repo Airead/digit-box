@@ -109,6 +109,54 @@ int fb_rect_draw_nofill(FB *fbp, FB_RECT *rectp)
 }
 
 /*
+ * draw a rect from left_top to right_bottom
+ * color according left_top
+ */
+int fb_rect_draw_nofill_screen(FB_SCREEN *screenp, FB_RECT *rectp) 
+{
+	FB_POINT point1, point2;
+
+	/* top */
+	//int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color)
+	fb_set_pixel(&point1, rectp->left_top.x, rectp->left_top.y, 
+		     rectp->left_top.color);
+	fb_set_pixel(&point2, rectp->left_top.x + rectp->width - 1, 
+		     rectp->left_top.y, rectp->left_top.color);
+	//int fb_draw_line_screen(FB *screenp, FB_POINT *point1, FB_POINT *point2)
+	fb_draw_line_screen(screenp, &point1, &point2);
+
+	/* left */
+	//int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color)
+	fb_set_pixel(&point1, rectp->left_top.x, rectp->left_top.y, 
+		     rectp->left_top.color);
+	fb_set_pixel(&point2, rectp->left_top.x, rectp->left_top.y + rectp->height, 
+		     rectp->left_top.color);
+	//int fb_draw_line_screen(FB *screenp, FB_POINT *point1, FB_POINT *point2)
+	fb_draw_line_screen(screenp, &point1, &point2);
+
+	/* bottom */
+	//int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color)
+	fb_set_pixel(&point1, rectp->left_top.x, rectp->left_top.y + rectp->height - 1, 
+		     rectp->left_top.color);
+	fb_set_pixel(&point2, rectp->left_top.x + rectp->width - 1, 
+		     rectp->left_top.y + rectp->height - 1, rectp->left_top.color);
+	//int fb_draw_line_screen(FB *screenp, FB_POINT *point1, FB_POINT *point2)
+	fb_draw_line_screen(screenp, &point1, &point2);
+
+	/* right */
+	//int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color)
+	fb_set_pixel(&point1, rectp->left_top.x + rectp->width - 1, rectp->left_top.y, 
+		     rectp->left_top.color);
+	fb_set_pixel(&point2, rectp->left_top.x + rectp->width - 1, 
+		     rectp->left_top.y + rectp->height - 1, rectp->left_top.color);
+	//int fb_draw_line_screen(FB *screenp, FB_POINT *point1, FB_POINT *point2)
+	fb_draw_line_screen(screenp, &point1, &point2);
+	
+
+	return 0;
+}
+
+/*
  * rotation a rect.
  * @radian: angle
  * @flag: FB_ROTATION_CENTER | FB_ROTATION_FIXPOINT | FB_ROTATION_ORIGIN

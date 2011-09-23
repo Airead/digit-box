@@ -71,9 +71,12 @@ int fb_screen_clear(FB_SCREEN *screenp)
 	return 0;
 }
 
-/*
+/* 
  * add image to screen at (x, y)
  * assume that image always is rectangle
+ *
+ * note:
+ *   Before call this function, you SHOULD call fb_screen_optimize_image
  */
 int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep)
 {
@@ -121,6 +124,45 @@ int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep)
 
 	return 0;
 }
+
+/* 
+ * add image to screen at (x, y)
+ * assume that image always is rectangle
+ *
+ * note:
+ *   Before call this function, you SHOULD call fb_screen_optimize_image
+ */
+int fb_screen_add_image_fullscr(FB_SCREEN *screenp, FB_IMAGE *imagep)
+{
+	float px, py, pz;
+	int xpos, ypos;
+
+	xpos = (screenp->width - imagep->width) >> 1;
+	ypos = (screenp->height - imagep->height) >> 1;
+
+
+	px = screenp->width / (float)imagep->width;
+	py = screenp->height / (float)imagep->height;
+
+	pz = px < py ? px : py;
+
+	//int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
+	fb_image_setpos(imagep, xpos, ypos);		
+
+
+	if(pz < 1){
+		//int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep,
+		//             			float proportionx, float proportiony) 
+
+		fb_screen_add_image_enlarge(screenp, imagep, pz, pz);
+	}else{
+		
+		fb_screen_add_image(screenp, imagep);
+	}
+
+		return 0;
+}
+
 
 /*
  * optimize image to 32 bits per pixel
@@ -206,8 +248,8 @@ int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep,
 		}
 	}
 
-	tmpimg.x = imagep->x - (imagep->width / 2) * proportionx;
-	tmpimg.y = imagep->y - (imagep->height / 2) * proportiony;
+	tmpimg.x = (screenp->width - tmpimg.width) / 2;
+	tmpimg.y = (screenp->height - tmpimg.height) / 2;
 
 	//int fb_screen_add_image(FB_SCREEN *screenp, int x, int y, FB_IMAGE *imagep)
 	fb_screen_add_image(screenp, &tmpimg);

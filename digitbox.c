@@ -76,6 +76,10 @@ int main(int argc, char *argv[])
 			maindeal_common_dealcode(&status, cur_key_code);
 		}
 
+		if(cur_key_code == KEY_Q){
+			break;
+		}
+
 		usleep(33);
 	}
 
@@ -95,8 +99,8 @@ int main(int argc, char *argv[])
 	 *   5. kill mp3 process
 	 */
 			   
-	//int fb_close(FB *fbp);
-	fb_close(&status.fb);
+	maindeal_mainstatus_destory(&status);
+
 
 	//int umount(const char *target);
 			   

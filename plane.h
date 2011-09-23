@@ -25,5 +25,6 @@ int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
 int fb_rect_rotation(FB *fbp, FB_RECT *fb_rectp, double radian, int flag, FB_POINT *fixpoint);
 int fb_rect_tranform(FB *fbp, FB_RECT *fb_rectp, int flag, float hs, float vs, FB_POINT *fixpoint);
 int fb_rect_draw_nofill(FB *fbp, FB_RECT *rectp);
+int fb_rect_draw_nofill_screen(FB_SCREEN *screenp, FB_RECT *rectp);
 
 #endif

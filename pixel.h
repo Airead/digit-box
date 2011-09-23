@@ -10,6 +10,7 @@
 #define FB_PIXEL_H
 
 #include "framebuffer.h"
+#include "screen.h"
 
 typedef unsigned long COLOR_32;	/* 0x0f0f0f0f: transp, red, green, blue*/
 
@@ -21,6 +22,7 @@ typedef struct point{
 
 int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color);
 int fb_draw_pixel(struct framebuffer *fbp, FB_POINT *point);
+int fb_draw_pixel_screen(FB_SCREEN *screenp, FB_POINT *point);
 unsigned long fb_formatRGB(unsigned char red, unsigned char green, unsigned char blue);
 
 #endif

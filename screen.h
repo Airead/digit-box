@@ -30,5 +30,6 @@ int fb_screen_update(FB_SCREEN *screenp);
 int fb_screen_clear(FB_SCREEN *screenp);
 int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep, 
 				float proportionx, float proportiony);
+int fb_screen_add_image_fullscr(FB_SCREEN *screenp, FB_IMAGE *imagep);
 
 #endif
