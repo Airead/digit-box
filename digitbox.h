@@ -16,6 +16,7 @@
 
 #define DB_TEST_MODE 0
 #define DB_VIEW_MODE 2
+#define DB_SLIDE_MODE 3
 
 /* (n+1)*sp + n*si = 100 , video mode: 800x600 */
 #define DB_VIEW_MODE_NUM 3		/* matrix num */

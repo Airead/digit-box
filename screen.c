@@ -21,13 +21,21 @@
  */
 int fb_screen_init(FB_SCREEN *screenp, FB *fbp) 
 {
+	int i;
+
 	screenp->width = fbp->fb_vinfo.xres;
 	screenp->height = fbp->fb_vinfo.yres;
 	screenp->screensize = fbp->fb_screensize;
 	screenp->fb_start = fbp->fb_start;
 	screenp->pixelbits = fbp->fb_vinfo.bits_per_pixel;
 	screenp->screenstart = malloc(sizeof(char) * screenp->screensize);
-	
+
+	for(i = 0; i < 2; i++){
+		//int fb_image_init(FB_IMAGE *imagep, int width, int height, int components);
+		fb_image_init(&screenp->screen_buf[i], screenp->width,
+			      screenp->height, screenp->pixelbits / 8);
+	}
+
 	return 0;
 }
 
@@ -36,6 +44,12 @@ int fb_screen_init(FB_SCREEN *screenp, FB *fbp)
  */
 int fb_screen_destory(FB_SCREEN *screenp)
 {
+	int i;
+
+	for(i = 0; i < 2; i++){
+		fb_image_destory(&screenp->screen_buf[i]);
+	}
+
 	free(screenp->screenstart);
  
 	return 0;
@@ -293,3 +307,17 @@ int fb_screen_add_image_rotate(FB_SCREEN *screenp, FB_IMAGE *imagep, float radia
 }
 #endif
 
+/*
+ * Set image at center of screen
+ */
+int fb_screen_set_image_center(FB_SCREEN *screenp, FB_IMAGE *imagep)
+{
+	int xpos, ypos;
+
+	xpos = (screenp->width - imagep->width) / 2;
+	ypos = (screenp->height - imagep->height) / 2;
+	
+	fb_image_setpos(imagep, xpos, ypos);
+	
+	return 0;
+}

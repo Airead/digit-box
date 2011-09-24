@@ -19,6 +19,7 @@ typedef struct screen{
 	unsigned long pixelbits;
 	unsigned char *screenstart; /* screen mem */
 	unsigned char *fb_start;    /* framebuffer mem */
+	FB_IMAGE screen_buf[2];	    /* double buffer */
 }FB_SCREEN;
 
 int fb_screen_init(FB_SCREEN *screenp, FB *fbp);
@@ -31,5 +32,6 @@ int fb_screen_clear(FB_SCREEN *screenp);
 int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep, 
 				float proportionx, float proportiony);
 int fb_screen_add_image_fullscr(FB_SCREEN *screenp, FB_IMAGE *imagep);
+int fb_screen_set_image_center(FB_SCREEN *screenp, FB_IMAGE *imagep);
 
 #endif

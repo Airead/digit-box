@@ -43,9 +43,12 @@ int maindeal_mp3_play(struct mainstatus *status);
 int maindeal_mp3_play_init(struct mainstatus *status);
 int maindeal_option_view(struct mainstatus *status, uint16_t code);
 int maindeal_img_view(struct mainstatus *status);
+int maindeal_img_view_add(struct mainstatus *status);
 int maindeal_img_get_minimg(struct mainstatus *status);
 int maindeal_img_frame_draw(struct mainstatus * status, FB_IMAGE *imagep, 
 			    COLOR_32 startcolor, COLOR_32 stopcolor, int thick);
 int maindeal_img_show_fullscr(struct mainstatus *status);
+int maindeal_img_view_switch(struct mainstatus *status, int num);
+int maindeal_img_view_entry(struct mainstatus *status);
 
 #endif

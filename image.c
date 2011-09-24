@@ -433,3 +433,19 @@ int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *minimgp,
 
 	return 0;
 }
+
+/*
+ * initialize image 
+ */
+int fb_image_init(FB_IMAGE *imagep, int width, int height, int components)
+{
+	imagep->x = 0;
+	imagep->y = 0;
+	imagep->width = width;
+	imagep->height = height;
+	imagep->components = components;
+	imagep->imagesize = width * height * components;
+	imagep->imagestart = malloc(imagep->imagesize);
+
+	return 0;
+}

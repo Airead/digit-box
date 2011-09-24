@@ -23,6 +23,7 @@ typedef struct image{
 	unsigned char *imagestart;	/* image start */
 }FB_IMAGE;
 
+int fb_image_init(FB_IMAGE *imagep, int width, int height, int components);
 int fb_image_show(FB *fbp, FB_IMAGE *image);
 int fb_imageinfo(FB_IMAGE *imagep);
 int fb_image_transform(FB *fbp, FB_IMAGE *imagep, float hs, float vs);

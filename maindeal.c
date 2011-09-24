@@ -421,22 +421,27 @@ int maindeal_img_show_fullscr(struct mainstatus *status)
 
 	fb_image_setpos(&image, 0, 0);
 
-	proportion = 0.05;	
+	proportion = 0.01;	
 	while(proportion < 1){
 		//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, float proportionx, float proportiony);
 		fb_image_enlarge(&image, &retimg, proportion, proportion);
 
-		//int fb_image_enlarge_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
-		fb_image_enlarge_setcenter(&image, &retimg);
+		if(retimg.width > status->screen.width ||
+		   retimg.height > status->screen.height){
+			break;
+		}
+
+		//int fb_screen_set_image_center(FB_SCREEN *screenp, FB_IMAGE *imagep);
+		fb_screen_set_image_center(&status->screen, &retimg);
 
 		//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
-		fb_screen_add_image_fullscr(&status->screen, &retimg);
+		fb_screen_add_image(&status->screen, &retimg);
 		
 		fb_screen_update(&status->screen);
 
 		fb_image_destory(&retimg);
 		
-		proportion *= 1.1;
+		proportion += 0.05;
 	}
 	//int fb_image_destory(FB_IMAGE *imagep);
 	fb_image_destory(&image);
@@ -559,34 +564,51 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
+	static int space_flag;	/* 1 for show, 0 for view */
+
 	switch(code){
-	case KEY_SPACE:
-		maindeal_img_mini_setcurpos(status, 9);
-		maindeal_img_view(status);
+	case KEY_SPACE:		/* show/view image */
+		if(space_flag == 0){
+			maindeal_img_view_entry(status);
+			space_flag = 1;
+		}else{
+			status->img_cur_pos = 
+				status->img_mini_cur_pos + status->img_mini_offset;
+			maindeal_img_show_fullscr(status);
+			space_flag = 0;
+		}
 		break;
-	case KEY_LEFT:
+	case KEY_A:		/* left screen */
+		maindeal_img_view_switch(status, -1);
+		break;
+	case KEY_D:		/* right screen */
+		maindeal_img_view_switch(status, 1);
+		break;
+	case KEY_LEFT:		/* select left image */
 		maindeal_img_mini_setoffset(status, -3);
 		maindeal_img_view(status);
 		break;
-	case KEY_RIGHT:
+	case KEY_RIGHT:		/* select right image */
 		maindeal_img_mini_setoffset(status, 3);
 		maindeal_img_view(status);
 		break;
-	case KEY_UP:
+	case KEY_UP:		/* select up image */
 		maindeal_img_mini_setoffset(status, -1);
 		maindeal_img_view(status);
 		break;
-	case KEY_DOWN:
+	case KEY_DOWN:		/* select down image */
 		maindeal_img_mini_setoffset(status, 1);
 		maindeal_img_view(status);
 		break;
-	case KEY_ENTER:
-		status->img_cur_pos = 
-			status->img_mini_cur_pos + status->img_mini_offset;
-		maindeal_img_show_fullscr(status);
+	case KEY_P:		/* play previous music */
+		maindeal_mp3_play_init(status);
+		maindeal_mp3_setcurpos(status, -1);
+		maindeal_mp3_play(status);
 		break;
-	case KEY_BACKSPACE:
-		maindeal_img_view(status);
+	case KEY_N:		/* play next music */
+		maindeal_mp3_play_init(status);
+		maindeal_mp3_setcurpos(status, 1);
+		maindeal_mp3_play(status);
 		break;
 	default:
 		break;
@@ -599,6 +621,46 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
  * View image as matrix (n x n)
  */
 int maindeal_img_view(struct mainstatus *status)
+{
+	FB_IMAGE retimg;
+	int loc;
+	float proportion;
+
+	maindeal_img_view_add(status);
+
+	loc = status->img_mini_cur_pos + status->img_mini_offset;
+	proportion = 1;
+
+	while(proportion < 1.1){
+		//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
+		//                    float proportionx, float proportiony)
+		fb_image_enlarge(&status->img_list_mini[loc], &retimg,
+				 proportion, proportion);
+
+		
+		//int fb_image_entlage_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
+		fb_image_enlarge_setcenter(&status->img_list_mini[loc], &retimg);
+
+		/* draw selected frame */
+		maindeal_img_frame_draw(status, &retimg, 190, 255, 4);
+
+		fb_screen_add_image(&status->screen, &retimg);
+
+		fb_screen_update(&status->screen);
+		
+		fb_image_destory(&retimg);
+		proportion += 0.01;
+	}
+
+
+
+	return 0;
+}
+
+/*
+ * View image as matrix (n x n)
+ */
+int maindeal_img_view_add(struct mainstatus *status)
 {
 	FB_IMAGE retimg;
 	int i, j, k;
@@ -637,33 +699,20 @@ int maindeal_img_view(struct mainstatus *status)
 		}
 	}
 
-#if _DEBUG_
-//	fprintf(stdout, "%s: img_mini_offset = %d\n", __func__, 
-//		status->img_mini_offset);
-#endif
+	//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
+	//                    float proportionx, float proportiony)
+	fb_image_enlarge(&status->img_list_mini[loc], &retimg,
+			 proportion, proportion);
 
-	while(proportion < 1.1){
-		//int fb_image_enlarge(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
-		//                    float proportionx, float proportiony)
-		fb_image_enlarge(&status->img_list_mini[loc], &retimg,
-				 proportion, proportion);
+	//int fb_image_entlage_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
+	fb_image_enlarge_setcenter(&status->img_list_mini[loc], &retimg);
 
-		
-		//int fb_image_entlage_setcenter(FB_IMAGE *image, FB_IMAGE *retimgp);
-		fb_image_enlarge_setcenter(&status->img_list_mini[loc], &retimg);
+	/* draw selected frame */
+	maindeal_img_frame_draw(status, &retimg, 190, 255, 4);
 
-		/* draw selected frame */
-		maindeal_img_frame_draw(status, &retimg, 190, 255, 4);
+	fb_screen_add_image(&status->screen, &retimg);
 
-		fb_screen_add_image(&status->screen, &retimg);
-
-		fb_screen_update(&status->screen);
-		
-		fb_image_destory(&retimg);
-		proportion += 0.01;
-	}
-
-
+	fb_image_destory(&retimg);
 
 	return 0;
 }
@@ -672,7 +721,7 @@ int maindeal_img_view(struct mainstatus *status)
  * Get all image's mini mirror
  */
 int maindeal_img_get_minimg(struct mainstatus *status)
-{
+{	
 	FB_IMAGE img_tmp;
 	int i;
 	
@@ -739,3 +788,90 @@ int maindeal_img_frame_draw(struct mainstatus *status, FB_IMAGE *imagep,
 	return 0;
 }
 
+/*
+ * Switch screen according num
+ */
+int maindeal_img_view_switch(struct mainstatus *status, int num)
+{
+	int i;
+
+	/* first mirror */
+	//void *memcpy(void *dest, const void *src, size_t n);
+	memcpy(status->screen.screen_buf[0].imagestart, 
+	       status->screen.screenstart, status->screen.screensize);
+
+	/* set image current pos */
+	maindeal_img_mini_setcurpos(status, 9 * num);
+
+	/* second mirror */
+	maindeal_img_view_add(status);
+
+	memcpy(status->screen.screen_buf[1].imagestart, 
+	       status->screen.screenstart, status->screen.screensize);
+
+	if(num > 0){
+		for(i = 0; i < status->screen.width; i+=20){
+			fb_image_setpos(&status->screen.screen_buf[0], 0 - i, 0);
+			fb_image_setpos(&status->screen.screen_buf[1], 
+					status->screen.width - i - 1, 0);
+		
+			fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
+			fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
+
+			fb_screen_update(&status->screen);
+		}
+
+		fb_image_setpos(&status->screen.screen_buf[1], 
+				status->screen.width - i - 1, 0);
+		fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
+		fb_screen_update(&status->screen);
+	}else{
+		for(i = 0; i < status->screen.width; i+=20){
+			fb_image_setpos(&status->screen.screen_buf[0], 0 + i, 0);
+			fb_image_setpos(&status->screen.screen_buf[1], 
+					0 - status->screen.width + i - 1, 0);
+		
+			fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
+			fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
+
+			fb_screen_update(&status->screen);
+		}
+
+		fb_image_setpos(&status->screen.screen_buf[1], 
+				status->screen.width - i - 1, 0);
+		fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
+		fb_screen_update(&status->screen);
+	}
+
+	return 0;
+}
+
+int maindeal_img_view_entry(struct mainstatus *status)
+{
+	float proportion;
+
+	maindeal_img_view_add(status);
+	memcpy(status->screen.screen_buf[1].imagestart,
+	       status->screen.screenstart, status->screen.screensize);
+
+	proportion = 2;
+
+	while(proportion > 1){
+		//int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep, 
+		//		float proportionx, float proportiony);
+		fb_screen_add_image_enlarge(&status->screen, 
+					    &status->screen.screen_buf[1],
+					    proportion, proportion);
+//		fb_screen_set_image_center(&status->screen,
+//					   &status->screen.screen_buf[1]);
+
+		fb_screen_update(&status->screen);
+
+		proportion -= 0.4;
+	}
+
+	maindeal_img_view(status);
+//	fb_screen_update(&status->screen);
+	
+	return 0;
+}
