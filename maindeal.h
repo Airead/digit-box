@@ -13,12 +13,14 @@
 #include "framebuffer.h"
 #include "screen.h"
 #include "pixel.h"
+#include "font.h"
 
 
 struct mainstatus{ 
 	int mode;
 	FB fb;			/* framebuffer struct */
 	FB_SCREEN screen;
+	FB_FONT font;
 	char mp3_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/mp3/ *.mp3 */
 	int mp3_list_len;
 	int mp3_cur_pos;
@@ -29,6 +31,7 @@ struct mainstatus{
 	FB_IMAGE img_list_mini[DB_LIST_MAX]; /* mini image */
 	int img_mini_cur_pos;
 	int img_mini_offset;
+	unsigned char weatherinfo[DB_NAME_MAX + 1];
 };
 
 int maindeal_mainstatus_init(struct mainstatus *status);
@@ -50,5 +53,6 @@ int maindeal_img_frame_draw(struct mainstatus * status, FB_IMAGE *imagep,
 int maindeal_img_show_fullscr(struct mainstatus *status);
 int maindeal_img_view_switch(struct mainstatus *status, int num);
 int maindeal_img_view_entry(struct mainstatus *status);
+int maindeal_text_show(struct mainstatus *status);
 
 #endif

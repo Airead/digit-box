@@ -24,6 +24,9 @@
 #include "pixel.h"
 #include "resource.h"
 #include "plane.h"
+#include "font.h"
+#include "text.h"
+#include "weather.h"
 
 /*
  * initialize mainstatus
@@ -34,7 +37,6 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	char *debug_p;
 	int debug_i;
 #endif 
-
 	char udisk_path[DB_NAME_MAX + 1];
 	FILE *config_fp;	/* pointer to config file */
 	char *value;		/* value of config file */
@@ -69,15 +71,27 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	//int fb_screen_init(FB_SCREEN *screenp, FB *fbp);
 	fb_screen_init(&status->screen, &status->fb);
 
+	/* initialize font */
+	//int fb_font_open(char *fontname, FB_FONT *ffp);
+	fb_font_open("/usr/share/fonts/truetype/arphic/ukai.ttc", &status->font);
+
+	//int fb_font_set_charsize(FB_FONT *ffp, int fontsize);
+	fb_font_set_charsize(&status->font, 150);
+
 	/* initialize num */
 	status->img_cur_pos = 0;
 	status->img_mini_cur_pos = 0;
 	status->img_mini_offset = 0;
-	status->mp3_cur_pos = 0;
+	status->mp3_cur_pos = -1;
 	status->mp3_pid = 0;
 
 	//int config_close(FILE *fp);
 	config_close(config_fp);
+
+	/* initialize weather information */
+	//int weather_getinfo(unsigned char *weatherinfo, int second);
+	weather_getinfo(status->weatherinfo, 10);
+
 
 	/*
 	 * Detect U disk and mount it
@@ -144,6 +158,9 @@ int maindeal_mainstatus_destory(struct mainstatus *status)
 
 	//int fb_close(FB *fbp);
 	fb_close(&status->fb);
+	
+	//int fb_font_close(FB_FONT *ffp);
+	fb_font_close(&status->font);
 
 	return 0;
 }
@@ -531,8 +548,8 @@ int maindeal_mp3_play(struct mainstatus *status)
 	i = status->mp3_cur_pos;
 
 #if _DEBUG_
-	fprintf(stdout, "%s: ready to play %s\n", __func__,
-		status->mp3_list[i]);
+//	fprintf(stdout, "%s: ready to play %s\n", __func__,
+//		status->mp3_list[i]);
 #endif
 
 	if((mp3_pid = fork()) < 0){
@@ -542,7 +559,7 @@ int maindeal_mp3_play(struct mainstatus *status)
 		return -1;
 	}else if(mp3_pid == 0){
 		/* child process */
-		if(execlp("madplay", "madplay", status->mp3_list[i], NULL) < 0){
+		if(execlp("madplay", "madplay", "-Q", status->mp3_list[i], NULL) < 0){
 			fprintf(stderr, "%s: madplay %s failed: %s\n", __func__,
 				status->mp3_list[i], strerror(errno));
 			
@@ -555,6 +572,9 @@ int maindeal_mp3_play(struct mainstatus *status)
 	/* parent process */
 
 	status->mp3_pid = mp3_pid;
+
+	maindeal_text_show(status);
+	fb_screen_update(&status->screen);
 
 	return mp3_pid;
 }
@@ -646,13 +666,17 @@ int maindeal_img_view(struct mainstatus *status)
 
 		fb_screen_add_image(&status->screen, &retimg);
 
+		maindeal_text_show(status);
+
 		fb_screen_update(&status->screen);
 		
 		fb_image_destory(&retimg);
 		proportion += 0.01;
 	}
 
+	maindeal_text_show(status);
 
+	fb_screen_update(&status->screen);
 
 	return 0;
 }
@@ -794,6 +818,7 @@ int maindeal_img_frame_draw(struct mainstatus *status, FB_IMAGE *imagep,
 int maindeal_img_view_switch(struct mainstatus *status, int num)
 {
 	int i;
+	int k;
 
 	/* first mirror */
 	//void *memcpy(void *dest, const void *src, size_t n);
@@ -809,40 +834,22 @@ int maindeal_img_view_switch(struct mainstatus *status, int num)
 	memcpy(status->screen.screen_buf[1].imagestart, 
 	       status->screen.screenstart, status->screen.screensize);
 
-	if(num > 0){
-		for(i = 0; i < status->screen.width; i+=20){
-			fb_image_setpos(&status->screen.screen_buf[0], 0 - i, 0);
-			fb_image_setpos(&status->screen.screen_buf[1], 
-					status->screen.width - i - 1, 0);
-		
-			fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
-			fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
-
-			fb_screen_update(&status->screen);
-		}
-
+	k = 0;
+	for(i = 0; i < status->screen.width; i = i + k + 5){
+		fb_image_setpos(&status->screen.screen_buf[0], (0 - i) * num, 0);
 		fb_image_setpos(&status->screen.screen_buf[1], 
-				status->screen.width - i - 1, 0);
-		fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
-		fb_screen_update(&status->screen);
-	}else{
-		for(i = 0; i < status->screen.width; i+=20){
-			fb_image_setpos(&status->screen.screen_buf[0], 0 + i, 0);
-			fb_image_setpos(&status->screen.screen_buf[1], 
-					0 - status->screen.width + i - 1, 0);
+				(status->screen.width - i) * num - 1, 0);
 		
-			fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
-			fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
-
-			fb_screen_update(&status->screen);
-		}
-
-		fb_image_setpos(&status->screen.screen_buf[1], 
-				status->screen.width - i - 1, 0);
+		fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
 		fb_screen_add_image(&status->screen, &status->screen.screen_buf[1]);
+
 		fb_screen_update(&status->screen);
+		
+		k = (status->screen.width - i) * 0.05;
 	}
 
+	maindeal_img_view(status);
+	
 	return 0;
 }
 
@@ -857,13 +864,9 @@ int maindeal_img_view_entry(struct mainstatus *status)
 	proportion = 2;
 
 	while(proportion > 1){
-		//int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep, 
-		//		float proportionx, float proportiony);
 		fb_screen_add_image_enlarge(&status->screen, 
 					    &status->screen.screen_buf[1],
 					    proportion, proportion);
-//		fb_screen_set_image_center(&status->screen,
-//					   &status->screen.screen_buf[1]);
 
 		fb_screen_update(&status->screen);
 
@@ -871,7 +874,40 @@ int maindeal_img_view_entry(struct mainstatus *status)
 	}
 
 	maindeal_img_view(status);
-//	fb_screen_update(&status->screen);
 	
+	return 0;
+}
+
+/*
+ * all texts are show here
+ */
+int maindeal_text_show(struct mainstatus *status)
+{
+	unsigned char *mp3_info;
+
+	//int fb_font_set_charsize(FB_FONT *ffp, int fontsize);
+	fb_font_set_charsize(&status->font, 150);
+
+	//int fb_text_show_cn(FB_SCREEN *screenp, unsigned char *str, FB_FONT *ffp, int x, int y)
+	fb_text_show_cn(&status->screen, (unsigned char *)
+			"digit-box", &status->font, 0, 30);
+
+	fb_font_set_charsize(&status->font, 96);
+
+	/* show weather information */
+	if(strcmp((char *)status->weatherinfo, "") != 0){ 
+		fb_text_show_cn(&status->screen, (unsigned char *)
+				"北京天气", &status->font, 200, 25);
+		
+		fb_text_show_cn(&status->screen, status->weatherinfo, &status->font, 300, 25);
+	}
+
+	/* show mp3 information */
+	if(status->mp3_cur_pos != -1){
+		mp3_info = (unsigned char *)
+			strrchr(status->mp3_list[status->mp3_cur_pos], '/') + 1;
+		fb_text_show_cn(&status->screen, mp3_info, &status->font, 20, 595);
+	}
+
 	return 0;
 }
