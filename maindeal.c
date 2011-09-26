@@ -41,7 +41,7 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	FILE *config_fp;	/* pointer to config file */
 	char *value;		/* value of config file */
 
-	status->mode = DB_TEST_MODE;
+	status->mode = DB_VIEW_MODE;
 	//FILE *config_open(char *filename);
 	if((config_fp = config_open("digitbox.conf", "r")) == NULL){
 		fprintf(stderr, "can't open digitbox.conf: %s\n", 
@@ -72,8 +72,9 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	fb_screen_init(&status->screen, &status->fb);
 
 	/* initialize font */
+	value = config_getvalue_byname(config_fp, "font_path");
 	//int fb_font_open(char *fontname, FB_FONT *ffp);
-	fb_font_open("/usr/share/fonts/truetype/arphic/ukai.ttc", &status->font);
+	fb_font_open(value, &status->font);
 
 	//int fb_font_set_charsize(FB_FONT *ffp, int fontsize);
 	fb_font_set_charsize(&status->font, 150);
@@ -85,8 +86,6 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	status->mp3_cur_pos = -1;
 	status->mp3_pid = 0;
 
-	//int config_close(FILE *fp);
-	config_close(config_fp);
 
 	/* initialize weather information */
 	fprintf(stdout, "get weather information...\n");
@@ -103,8 +102,9 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 #if _DEBUG_VIR		    /* should place after actual udisk function */
 	
 	memset(status->udisk_path, 0, DB_NAME_MAX + 1);
+	value = config_getvalue_byname(config_fp, "usb_path_vir");
 	//char *strncpy(char *dest, const char *src, size_t n);
-	strncpy(status->udisk_path, "/home/airead/study/virusb", DB_NAME_MAX);
+	strncpy(status->udisk_path, value, DB_NAME_MAX);
 
 	/* udisk_path first be used for device name */
 	//int udisk_detect_vir(char *devname);
@@ -118,8 +118,9 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 #ifndef _DEBUG_VIR
 
 	memset(status->udisk_path, 0, DB_NAME_MAX + 1);
-	
-	strncpy(status->udisk_path, "usb", DB_NAME_MAX);
+
+	value = config_getvalue_byname(config_fp, "mountpath");
+	strncpy(status->udisk_path, value, DB_NAME_MAX);
 	
 	//int udisk_detect_vir(char *devname);
 	udisk_detect_mount(status->udisk_path);
@@ -156,6 +157,11 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 
 		return -1;
 	}
+	
+	maindeal_img_view(status);
+
+	//int config_close(FILE *fp);
+	config_close(config_fp);
 
 	return 0;
 }
@@ -1029,6 +1035,13 @@ int maindeal_mp3(struct mainstatus *status, uint16_t code)
 	case KEY_N:		/* play next music */
 		maindeal_mp3_play_init(status);
 		maindeal_mp3_setcurpos(status, 1);
+		maindeal_mp3_play(status);
+		break;
+	case KEY_K:		/* play next music */
+		maindeal_mp3_play_init(status);
+		break;
+	case KEY_R:		/* play next music */
+		maindeal_mp3_play_init(status);
 		maindeal_mp3_play(status);
 		break;
 	default:

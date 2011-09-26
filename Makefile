@@ -1,10 +1,9 @@
 
 CC	= gcc
 
-CFLAGS	= -Wall -g -D_DEBUG_  -lm -ljpeg -lpthread \
-	-lfreetype -lz \
-	-D_DEBUG_VIR
-
+CFLAGS	= -Wall -lm -ljpeg -lpthread -lfreetype -lz \
+	-D_DEBUG_VIR \
+	-D_DEBUG_ -g
 OBJECT	= digitbox.c framebuffer.c config.c udisk.c resource.c \
 	maindeal.c screen.c image.c pixel.c jpeg.c line.c \
 	plane.c font.c text.c weather.c effects.c

@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
 	/*
 	 * Initialize everything
 	 *   3. initialize user key control
-	 *   4. initialize weather data
 	 *   5. turn off echo
 	 *   6. init global_key_code_mutex
 	 *   7. start key control thread

@@ -9,18 +9,80 @@
 digit-box: multimedia show picture program
 =========================================================
 
+NOTE:
+---------------------------------------------------------
+    Digit-box is not prefect. So if it already runs but show nothing,
+  please repeatedly press the space until show something.
+    And if it still shows nothing, please kill it!
+
+INSTALL:
+---------------------------------------------------------
+  install is very simply.
+  1. make
+  2. over ^_^
+
+HOW TO ENJOY
+---------------------------------------------------------
+  There are tow mode to enjoy it:
+     Mode one: U disk mode. (Makefile SHOULD NOT have _DEBUG_VIR)
+       1. Put some mp3 in <udisk root>/digitbox/mp3/;
+       2. Put some image in <udisk root>/digitbox/jpg/;
+            ONLY can put image with STANDARD jpeg format, else error is coming.
+       3. "Entry into framebuffer";
+            How to start with framebuff? I don't know. You should study yourself!
+       4. Enjoy it!
+
+     Mode two: virtual U disk mode (Makefile SHOULD have _DEBUG_VIR)
+       0. Yous SHOULD modify digitbox.conf value:
+            usb_path_vir=<virtual path>; (such as /home/airead/study/virusb);
+       1. Put some mp3 in <virtual path>/digitbox/mp3/;
+       2. Put some image in <virtual path>/digitbox/jpg/;
+            ONLY can put image with STANDARD jpeg format, else error is coming.
+       3. "Entry into framebuffer";
+            How to start with framebuff? I don't know. You should study yourself!
+       4. Enjoy it!
+
+HOW TO OPERATE:
+---------------------------------------------------------
+  I tell you that all keys can be used are follows:
+    1. 'a', left move (only works at view image);
+    2. 'd', right move (only works at view image);
+    3. <space> ' ', show and view image;
+    4. arrows UP/DOWN/LEFT/RIGHT, try it yourself;
+    5. [n/p/k/r] note below;
+
+    more features can be set, if I want and if you need...
+
 Evironment:
+---------------------------------------------------------
   1. This software works ONLY under the framebuffer 800x600 24bit mode
   2. You SHOULD change value of `digitbox.conf' to your own system
-  3. Run digitbox as root, beause it read the input device
+  3. Run digitbox as root, beause it read the input device and framebuffer device
+
+Effects:
+---------------------------------------------------------
+  1. Blinds effects
+  2. Move effects
+  3. 
+  ... 
+
+  every effects have some option that can be set.
+
+Mp3
+---------------------------------------------------------
+  Operate:
+    1. press 'n' play next mp3
+    2. press 'p' play previous mp3
+    3. press 'k' stop play
+    4. prees 'r' replay 
+
+    more features can be set, if I want and if you need...
 
 Main functions
 ---------------------------------------------------------
-  1. Extract JPEG files (libjpeg)
-  2. Background music
+  1. show image file (only support JPEG format)
+  2. Background music 
   3. User key control
   4. Picture effects show
-  5. Directory traversal
-  6. Framebuffer application (memory mapped)
-  7. U disk detection (file I/O)
-  8. Weather
+  5. U disk detection 
+  6. Weather
