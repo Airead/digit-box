@@ -238,6 +238,9 @@ int effects_img_move(FB_SCREEN *screenp, FB_IMAGE *imagep, int slow, int directi
 
 	}
 
+	for(i = 0; i < 2; i++){
+		fb_image_setpos(&screenp->screen_buf[i], 0, 0);
+	}
 
 	return 0;
 }

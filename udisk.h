@@ -9,9 +9,16 @@
 #ifndef DB_UDISK_H
 #define DB_UDISK_H
 
-int udisk_detect(char *devname);
-int udisk_mount(char *devname);
+#include "digitbox.h"
+
+#define DB_DEVICE_MAX 64
+
+int udisk_detect_mount(char *directory);
+int udisk_mount(char dev_list[][DB_NAME_MAX + 1],char dev_list_mounted[][DB_NAME_MAX + 1], char *directory);
+int udisk_umount(char *directory);
 int udisk_detect_vir(char *devname);
 int udisk_mount_vir(char *devname);
+int udisk_devlist_get(char *dirpath, char dev_list[][DB_NAME_MAX + 1]);
+int udisk_devlist_get_mounted(char *mtabfile, char dev_list_mounted[][DB_NAME_MAX + 1]);
 
 #endif

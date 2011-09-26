@@ -38,7 +38,6 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	char *debug_p;
 	int debug_i;
 #endif 
-	char udisk_path[DB_NAME_MAX + 1];
 	FILE *config_fp;	/* pointer to config file */
 	char *value;		/* value of config file */
 
@@ -90,8 +89,9 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	config_close(config_fp);
 
 	/* initialize weather information */
+	fprintf(stdout, "get weather information...\n");
 	//int weather_getinfo(unsigned char *weatherinfo, int second);
-	weather_getinfo(status->weatherinfo, 10);
+	weather_getinfo(status->weatherinfo, 3);
 
 
 	/*
@@ -102,27 +102,38 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 	/* Detect U disk anm mount it */
 #if _DEBUG_VIR		    /* should place after actual udisk function */
 	
-	memset(udisk_path, 0, DB_NAME_MAX + 1);
+	memset(status->udisk_path, 0, DB_NAME_MAX + 1);
 	//char *strncpy(char *dest, const char *src, size_t n);
-	strncpy(udisk_path, "/home/airead/study/virusb", DB_NAME_MAX);
+	strncpy(status->udisk_path, "/home/airead/study/virusb", DB_NAME_MAX);
 
 	/* udisk_path first be used for device name */
 	//int udisk_detect_vir(char *devname);
-	udisk_detect_vir(udisk_path);
+	udisk_detect_vir(status->udisk_path);
 
 	//int udisk_mount_vir(char *devname);
-	udisk_mount_vir(udisk_path);
+	udisk_mount_vir(status->udisk_path);
 
 #endif
+
+#ifndef _DEBUG_VIR
+
+	memset(status->udisk_path, 0, DB_NAME_MAX + 1);
 	
+	strncpy(status->udisk_path, "usb", DB_NAME_MAX);
+	
+	//int udisk_detect_vir(char *devname);
+	udisk_detect_mount(status->udisk_path);
+	
+#endif	
+
 	/* Read mp3/image list */
 	//int resource_common_list(char *usbpath, char list[][DB_NAME_MAX + 1], 
 	//                        char *type);
-	if((status->img_list_len = resource_common_list(udisk_path, status->img_list, "jpg")) < 0){
+	if((status->img_list_len = resource_common_list(status->udisk_path, status->img_list, "jpg")) < 0){
 		fprintf(stderr, "resource_common_list(jpg) failed\n");
 	}
 
-	if((status->mp3_list_len = resource_common_list(udisk_path, status->mp3_list, "mp3")) < 0){
+	if((status->mp3_list_len = resource_common_list(status->udisk_path, status->mp3_list, "mp3")) < 0){
 		fprintf(stderr, "resource_common_list(jpg) failed\n");
 	}
 
@@ -154,6 +165,14 @@ int maindeal_mainstatus_init(struct mainstatus *status)
  */
 int maindeal_mainstatus_destory(struct mainstatus *status)
 {
+	//int kill(pid_t pid, int sig);
+	if(status->mp3_pid != 0){
+		kill(status->mp3_pid, SIGINT);
+	}
+
+	//pid_t waitpid(pid_t pid, int *status, int options);
+	waitpid(status->mp3_pid, NULL, 0);
+	
 	//int fb_screen_destory(FB_SCREEN *screenp);
 	fb_screen_destory(&status->screen);
 
@@ -163,6 +182,13 @@ int maindeal_mainstatus_destory(struct mainstatus *status)
 	//int fb_font_close(FB_FONT *ffp);
 	fb_font_close(&status->font);
 
+	/* umount U disk */
+#ifndef _DEBUG_VIR	
+	if(udisk_umount(status->udisk_path) < 0){
+		fprintf(stderr, "%s: udisk_umount() failed\n", __func__);
+		return -1;
+	}
+#endif
 	return 0;
 }
 
@@ -580,11 +606,8 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
-	static int i;
 	static int space_flag;	/* 0 for show, 1 for view */
 
-	i++;
-	
 	switch(space_flag){
 	case 0:
 		switch(code){
@@ -657,17 +680,16 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 		case KEY_UP:		/* select up image */
 			maindeal_img_setcurpos(status, 1);
 			//int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
-			//maindeal_effects_blinds(status, i, DB_EFFECTS_RIGHT);
+			maindeal_effects_blinds(status, 9, DB_EFFECTS_RIGHT);
+			maindeal_effects_blinds(status, 9, DB_EFFECTS_LEFT);
+			maindeal_effects_blinds(status, 9, DB_EFFECTS_UP);
+			maindeal_effects_blinds(status, 9, DB_EFFECTS_DOWN);
 			
 			maindeal_effects_move(status, 10, DB_EFFECTS_DOWN);
 			maindeal_effects_move(status, 10, DB_EFFECTS_UP);
 			maindeal_effects_move(status, 10, DB_EFFECTS_LEFT);
 			maindeal_effects_move(status, 10, DB_EFFECTS_RIGHT);
-			
-			i++;
-			if(i > 30){
-				i = 1;
-			}
+
 			break;
 		case KEY_DOWN:		/* select down image */
 

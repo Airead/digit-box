@@ -6,15 +6,6 @@
  *		after studying APUE 34 days		*
  ********************************************************/
 
-
-/********************************************************
- * @author  Airead Fan <fgh1987168@gmail.com>		*
- * @date    2011 9月 25 15:02:11 CST			*
- ********************************************************
- *		after studying C 69 days		*
- *		after studying APUE 34 days		*
- ********************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -24,6 +15,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include <sys/types.h> 
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <signal.h>
@@ -87,17 +79,23 @@ int weather_getinfo(unsigned char *weatherinfo, int second)
 	if (retval == -1){
 		fprintf(stderr, "%s: select() failed: %s", __func__,
 			strerror(errno));
+		close(pipefd[0]);
+
 		return -1;
 	}else if(FD_ISSET(pipefd[0], &rfds)){
 		//ssize_t read(int fd, void *buf, size_t count);
 		read(pipefd[0], weatherinfo, DB_NAME_MAX);
 	}else{
 		printf("get weather information failed.\n");
+		close(pipefd[0]);
+		
+		return -1;
 	}
 
-		close(pipefd[0]);
+	close(pipefd[0]);
 	//int kill(pid_t pid, int sig);
 	kill(pid_weather, SIGINT);
+	waitpid(pid_weather, NULL, 0);
 
 	return 0;
 }

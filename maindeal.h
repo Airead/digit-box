@@ -21,6 +21,7 @@ struct mainstatus{
 	FB fb;			/* framebuffer struct */
 	FB_SCREEN screen;
 	FB_FONT font;
+	char udisk_path[DB_NAME_MAX + 1];	     /* U disk mount directory */
 	char mp3_list[DB_LIST_MAX][DB_NAME_MAX + 1]; /* store <usbpath>/mp3/ *.mp3 */
 	int mp3_list_len;
 	int mp3_cur_pos;
