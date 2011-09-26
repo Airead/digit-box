@@ -33,5 +33,9 @@ int fb_screen_add_image_enlarge(FB_SCREEN *screenp, FB_IMAGE *imagep,
 				float proportionx, float proportiony);
 int fb_screen_add_image_fullscr(FB_SCREEN *screenp, FB_IMAGE *imagep);
 int fb_screen_set_image_center(FB_SCREEN *screenp, FB_IMAGE *imagep);
+int fb_screen_upturn_buf(FB_SCREEN *screenp, int num);
+int fb_screen_clear_buf(FB_SCREEN *screenp, int num);
+int fb_screen_add_image_byline(FB_IMAGE *imagep, FB_SCREEN *screenp, int line);
+int fb_screen_add_image_bylinev(FB_IMAGE *imagep, FB_SCREEN *screenp, int line);
 
 #endif

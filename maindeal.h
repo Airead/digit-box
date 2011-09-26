@@ -54,5 +54,8 @@ int maindeal_img_show_fullscr(struct mainstatus *status);
 int maindeal_img_view_switch(struct mainstatus *status, int num);
 int maindeal_img_view_entry(struct mainstatus *status);
 int maindeal_text_show(struct mainstatus *status);
+int maindeal_mp3(struct mainstatus *status, uint16_t code);
+int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
+int maindeal_effects_move(struct mainstatus *status, int slow, int direction);
 
 #endif

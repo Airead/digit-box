@@ -27,6 +27,7 @@
 #include "font.h"
 #include "text.h"
 #include "weather.h"
+#include "effects.h"
 
 /*
  * initialize mainstatus
@@ -172,6 +173,7 @@ int maindeal_common_dealcode(struct mainstatus *status, uint16_t code)
 {
 	maindeal_mode(status, code);
 	maindeal_option(status, code);
+	maindeal_mp3(status, code);
 
 	return 0;
 }
@@ -181,26 +183,22 @@ int maindeal_common_dealcode(struct mainstatus *status, uint16_t code)
  *   1. Test mode: KEY_MINUS ('-')
  *   2. View mode: KEY_1 ('1')
  */
-
 int maindeal_mode(struct mainstatus *status, uint16_t code)
 {
 	switch(code){
 
 	case KEY_MINUS:		/* Test mode */
-#if _DEBUG_
-		fprintf(stdout, "%s: start TEST mode\n", __func__);
-#endif
-
 		status->mode = DB_TEST_MODE;
 		break;
 		
 	case KEY_2:		/* View mode */
-#if _DEBUG_
-		fprintf(stdout, "%s: start VIEW mode\n", __func__);
-#endif
-
 		status->mode = DB_VIEW_MODE;
 		break;
+
+	case KEY_3:		/* Slide mode */
+		status->mode = DB_SLIDE_MODE;
+		break;
+
 	default:
 		break;
 	}
@@ -217,9 +215,11 @@ int maindeal_option(struct mainstatus *status, uint16_t code)
 	case DB_TEST_MODE:
 		maindeal_option_test(status, code);
 		break;
+
 	case DB_VIEW_MODE:
 		maindeal_option_view(status, code);
 		break;
+
 	default:
 		fprintf(stderr, "%s: mode error!\n", __func__);
 		break;
@@ -343,14 +343,10 @@ int maindeal_option_test(struct mainstatus *status, uint16_t code)
 		maindeal_img_show(status);
 		break;
 	case KEY_UP:		/* play previous music */
-		maindeal_mp3_play_init(status);
-		maindeal_mp3_setcurpos(status, -1);
-		maindeal_mp3_play(status);
+
 		break;
 	case KEY_DOWN:		/* play next music */
-		maindeal_mp3_play_init(status);
-		maindeal_mp3_setcurpos(status, 1);
-		maindeal_mp3_play(status);
+
 		break;
 	default:
 		break;
@@ -584,56 +580,137 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
-	static int space_flag;	/* 1 for show, 0 for view */
+	static int i;
+	static int space_flag;	/* 0 for show, 1 for view */
 
-	switch(code){
-	case KEY_SPACE:		/* show/view image */
-		if(space_flag == 0){
+	i++;
+	
+	switch(space_flag){
+	case 0:
+		switch(code){
+		case KEY_SPACE:		/* view image */
 			maindeal_img_view_entry(status);
 			space_flag = 1;
-		}else{
+			break;
+		case KEY_A:		/* left screen */
+
+			break;
+		case KEY_D:		/* right screen */
+
+			break;
+		case KEY_LEFT:		/* select left image */
+			maindeal_img_setcurpos(status, -1);
+			maindeal_img_show_fullscr(status);
+			break;
+		case KEY_RIGHT:		/* select right image */
+			maindeal_img_setcurpos(status, 1);
+			maindeal_img_show_fullscr(status);
+			break;
+#if _DEBUG_
+		case KEY_T:		/* Test some function */
+			/* test new function*/
+			maindeal_img_setcurpos(status, 1);
+			
+			{
+				FB_IMAGE image;
+				int i;
+
+				i = status->img_cur_pos;
+
+				//int fb_load_jpeg(FB_IMAGE *imagep, char *filename)
+				if(fb_load_jpeg(&image, status->img_list[i]) < 0){
+					fprintf(stderr, "%s: fb_load_jpeg() %s failed\n",
+						__func__, status->img_list[i]);
+			
+					return -1;
+				}
+		
+				//int fb_screen_optimize_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+				if(fb_screen_optimize_image(&status->screen, &image) < 0){
+					fprintf(stderr, "%s: fb_screen_optimize_image %s failed\n",
+						__func__, status->img_list[i]);
+			
+					return -1;
+				}
+				fb_image_setpos(&image, 0, 0);
+
+				fb_image_full_image(&image, &status->screen.screen_buf[0], 
+						    IMAGE_FULL_LOCK);
+				
+				//int fb_image_add_image(FB_IMAGE *imagep, FB_IMAGE *retimgp);
+				//fb_image_add_image(&image, &status->screen.screen_buf[0]);
+
+				//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
+				//fb_screen_add_image(&status->screen, &image);
+
+				fb_screen_upturn_buf(&status->screen, 0);
+
+				//int fb_image_destory(FB_IMAGE *imagep);
+				fb_image_destory(&image);
+
+				return 0;
+			}
+
+			
+			break;
+#endif
+		case KEY_UP:		/* select up image */
+			maindeal_img_setcurpos(status, 1);
+			//int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
+			//maindeal_effects_blinds(status, i, DB_EFFECTS_RIGHT);
+			
+			maindeal_effects_move(status, 10, DB_EFFECTS_DOWN);
+			maindeal_effects_move(status, 10, DB_EFFECTS_UP);
+			maindeal_effects_move(status, 10, DB_EFFECTS_LEFT);
+			maindeal_effects_move(status, 10, DB_EFFECTS_RIGHT);
+			
+			i++;
+			if(i > 30){
+				i = 1;
+			}
+			break;
+		case KEY_DOWN:		/* select down image */
+
+			break;
+		default:
+			break;
+		}
+		break;
+	case 1:
+		switch(code){
+		case KEY_SPACE:		/* show image */
 			status->img_cur_pos = 
 				status->img_mini_cur_pos + status->img_mini_offset;
 			maindeal_img_show_fullscr(status);
 			space_flag = 0;
+			break;
+		case KEY_A:		/* left screen */
+			maindeal_img_view_switch(status, -1);
+			break;
+		case KEY_D:		/* right screen */
+			maindeal_img_view_switch(status, 1);
+			break;
+		case KEY_LEFT:		/* select left image */
+			maindeal_img_mini_setoffset(status, -3);
+			maindeal_img_view(status);
+			break;
+		case KEY_RIGHT:		/* select right image */
+			maindeal_img_mini_setoffset(status, 3);
+			maindeal_img_view(status);
+			break;
+		case KEY_UP:		/* select up image */
+			maindeal_img_mini_setoffset(status, -1);
+			maindeal_img_view(status);
+			break;
+		case KEY_DOWN:		/* select down image */
+			maindeal_img_mini_setoffset(status, 1);
+			maindeal_img_view(status);
+			break;
+		default:
+			break;
 		}
 		break;
-	case KEY_A:		/* left screen */
-		maindeal_img_view_switch(status, -1);
-		break;
-	case KEY_D:		/* right screen */
-		maindeal_img_view_switch(status, 1);
-		break;
-	case KEY_LEFT:		/* select left image */
-		maindeal_img_mini_setoffset(status, -3);
-		maindeal_img_view(status);
-		break;
-	case KEY_RIGHT:		/* select right image */
-		maindeal_img_mini_setoffset(status, 3);
-		maindeal_img_view(status);
-		break;
-	case KEY_UP:		/* select up image */
-		maindeal_img_mini_setoffset(status, -1);
-		maindeal_img_view(status);
-		break;
-	case KEY_DOWN:		/* select down image */
-		maindeal_img_mini_setoffset(status, 1);
-		maindeal_img_view(status);
-		break;
-	case KEY_P:		/* play previous music */
-		maindeal_mp3_play_init(status);
-		maindeal_mp3_setcurpos(status, -1);
-		maindeal_mp3_play(status);
-		break;
-	case KEY_N:		/* play next music */
-		maindeal_mp3_play_init(status);
-		maindeal_mp3_setcurpos(status, 1);
-		maindeal_mp3_play(status);
-		break;
-	default:
-		break;
 	}
-	
 	return 0;
 }
 
@@ -853,6 +930,9 @@ int maindeal_img_view_switch(struct mainstatus *status, int num)
 	return 0;
 }
 
+/*
+ * Enlarge selected mini image
+ */
 int maindeal_img_view_entry(struct mainstatus *status)
 {
 	float proportion;
@@ -910,4 +990,69 @@ int maindeal_text_show(struct mainstatus *status)
 	}
 
 	return 0;
+}
+
+
+/*
+ * Deal test mode code
+ */
+int maindeal_mp3(struct mainstatus *status, uint16_t code)
+{
+	switch(code){
+	case KEY_P:		/* play previous music */
+		maindeal_mp3_play_init(status);
+		maindeal_mp3_setcurpos(status, -1);
+		maindeal_mp3_play(status);
+		break;
+	case KEY_N:		/* play next music */
+		maindeal_mp3_play_init(status);
+		maindeal_mp3_setcurpos(status, 1);
+		maindeal_mp3_play(status);
+		break;
+	default:
+		break;
+	}
+	
+	return 0;
+}
+
+/*
+ * show current image with blinds effects
+ */
+int maindeal_effects_blinds(struct mainstatus *status, int num, int direction)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_blinds(FB_SCREEN *screenp, FB_IMAGE *imagep, int num, int direction)
+	effects_img_blinds(&status->screen, &image, num, direction);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
+}
+
+/*
+ * show current image with move effects
+ */
+int maindeal_effects_move(struct mainstatus *status, int slow, int direction)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_blinds(FB_SCREEN *screenp, FB_IMAGE *imagep, int num, int direction)
+	effects_img_move(&status->screen, &image, slow, direction);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
+
 }

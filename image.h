@@ -11,6 +11,9 @@
 
 #include "framebuffer.h"
 
+#define IMAGE_FULL_LOCK 1
+#define IMAGE_FULL_UNLOCK 0
+
 typedef struct image{
 	int x;			/* xpos */
 	int y;			/* ypos */
@@ -36,6 +39,8 @@ int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
 int fb_image_rotate(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian);
 int fb_image_rotate2(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian);
 int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *retimgp, int img_width, int img_height);
-
+int fb_image_full_image(FB_IMAGE *imagep, FB_IMAGE *retimgp, int flag);
+int fb_image_add_image(FB_IMAGE *imagep, FB_IMAGE *retimgp);
+int fb_image_add_image_byline(FB_IMAGE *imagep, FB_IMAGE *retimgp, int line);
 
 #endif

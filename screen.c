@@ -34,6 +34,8 @@ int fb_screen_init(FB_SCREEN *screenp, FB *fbp)
 		//int fb_image_init(FB_IMAGE *imagep, int width, int height, int components);
 		fb_image_init(&screenp->screen_buf[i], screenp->width,
 			      screenp->height, screenp->pixelbits / 8);
+
+		fb_image_setpos(&screenp->screen_buf[i], 0, 0);
 	}
 
 	return 0;
@@ -140,7 +142,7 @@ int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep)
 }
 
 /* 
- * add image to screen at (x, y)
+ * add image to screen 
  * assume that image always is rectangle
  *
  * note:
@@ -172,6 +174,33 @@ int fb_screen_add_image_fullscr(FB_SCREEN *screenp, FB_IMAGE *imagep)
 	}else{
 		
 		fb_screen_add_image(screenp, imagep);
+	}
+
+		return 0;
+}
+
+/* 
+ * add image to screen at (x, y)
+ * assume that image always is rectangle
+ *
+ * note:
+ *   Before call this function, you SHOULD call fb_screen_optimize_image
+ */
+int fb_screen_add_image_fullscrbuf(FB_IMAGE *scrbuf, FB_IMAGE *imagep)
+{
+	float px, py, pz;
+
+	px = scrbuf->width / (float)imagep->width;
+	py = scrbuf->height / (float)imagep->height;
+
+	pz = px < py ? px : py;
+
+	if(pz < 1){
+		//int fb_image_toimage(FB_IMAGE *imagep, FB_IMAGE *retimgp)
+		fb_image_full_image(imagep, scrbuf, IMAGE_FULL_LOCK);
+	}else{
+		//int fb_image_add_image(FB_IMAGE *imagep, FB_IMAGE *retimgp);
+		fb_image_add_image(imagep, scrbuf);
 	}
 
 		return 0;
@@ -319,5 +348,98 @@ int fb_screen_set_image_center(FB_SCREEN *screenp, FB_IMAGE *imagep)
 	
 	fb_image_setpos(imagep, xpos, ypos);
 	
+	return 0;
+}
+
+/*
+ * Upturn screen buf num
+ */
+int fb_screen_upturn_buf(FB_SCREEN *screenp, int num)
+{
+	memcpy(screenp->fb_start, screenp->screen_buf[num].imagestart,
+	       screenp->screensize);
+
+	return 0;
+}
+
+/*
+ * clear a screen buffer
+ */
+int fb_screen_clear_buf(FB_SCREEN *screenp, int num)
+{
+	memset(screenp->screen_buf[num].imagestart, 0x0,
+	       screenp->screen_buf[num].imagesize);
+
+	return 0;
+}
+
+/*
+ * Add image to framebuffer by line
+ */
+int fb_screen_add_image_byline(FB_IMAGE *imagep, FB_SCREEN *screenp, int line)
+{
+	int j;
+	unsigned long ret_loc;	/* screen location */
+	unsigned long im_loc;	/* image location */
+	long cpbytes;
+	unsigned char *p, *q;
+
+	p = screenp->fb_start;
+	q = imagep->imagestart;
+
+	j = line - 1;
+	
+	/* vertical overflow check */
+	if(0 < imagep->y + j && imagep->y + j < screenp->height){
+		ret_loc = ((imagep->y + j) * screenp->width + imagep->x) * imagep->components;
+		im_loc = j * imagep->width * imagep->components;
+
+		/* horizontal overflow check */
+		if(imagep->x >= 0){
+			if(screenp->width - imagep->x < imagep->width){
+				cpbytes = screenp->width - imagep->x;
+			}else{
+				cpbytes = imagep->width;
+			}
+		}else{
+			ret_loc = ret_loc - imagep->x * 4; /* -x > 0 */
+			im_loc = im_loc - imagep->x * 4;
+			cpbytes = imagep->width + imagep->x;
+		}
+		//void *memcpy(void *dest, const void *src, size_t n);
+		if(cpbytes > 0){
+			memcpy(p + ret_loc, q + im_loc, cpbytes * 4); 
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Add image to framebuffer by line
+ */
+int fb_screen_add_image_bylinev(FB_IMAGE *imagep, FB_SCREEN *screenp, int line)
+{
+	int j;
+	unsigned long ret_loc;	/* screen location */
+	unsigned long im_loc;	/* image location */
+	unsigned char *p, *q;
+
+	p = screenp->fb_start;
+	q = imagep->imagestart;
+
+	for(j = 0; j < screenp->height; j++){
+		/* vertical overflow check */
+		if(0 < imagep->y + j && imagep->y + j < screenp->height){
+			ret_loc = ((imagep->y + j) * screenp->width + line) * imagep->components;
+			im_loc = (j * imagep->width + line) * imagep->components;
+
+			/* horizontal overflow check */
+			if(line >= 0 && screenp->width - line < imagep->width){
+				memcpy(p + ret_loc, q + im_loc, 4); 
+			}
+		}
+	}
+
 	return 0;
 }
