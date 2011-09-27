@@ -37,5 +37,8 @@ int fb_screen_upturn_buf(FB_SCREEN *screenp, int num);
 int fb_screen_clear_buf(FB_SCREEN *screenp, int num);
 int fb_screen_add_image_byline(FB_IMAGE *imagep, FB_SCREEN *screenp, int line);
 int fb_screen_add_image_bylinev(FB_IMAGE *imagep, FB_SCREEN *screenp, int line);
+int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans);
+int fb_screen_update_trans(FB_SCREEN *screenp);
+int fb_screen_change_trans(FB_SCREEN *screenp, unsigned char trans);
 
 #endif

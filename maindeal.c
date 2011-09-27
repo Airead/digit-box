@@ -28,6 +28,7 @@
 #include "text.h"
 #include "weather.h"
 #include "effects.h"
+#include "line.h"
 
 /*
  * initialize mainstatus
@@ -612,7 +613,7 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
-	static int space_flag;	/* 0 for show, 1 for view */
+	static int space_flag = 1;	/* 0 for show, 1 for view */
 
 	switch(space_flag){
 	case 0:
@@ -641,6 +642,8 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			maindeal_img_setcurpos(status, 1);
 			
 			{
+				FB_RECT rect;
+				FB_POINT point1, point2;
 				FB_IMAGE image;
 				int i;
 
@@ -665,14 +668,26 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 
 				fb_image_full_image(&image, &status->screen.screen_buf[0], 
 						    IMAGE_FULL_LOCK);
+				fb_screen_add_image(&status->screen, &status->screen.screen_buf[0]);
+
+
+
+#if 0				
+				for(i = 0; i < 256; i++){
+					fb_screen_set_trans(&status->screen, i);
+					fb_screen_update_trans(&status->screen);
+				}
+#endif
 				
+			       
+					
 				//int fb_image_add_image(FB_IMAGE *imagep, FB_IMAGE *retimgp);
 				//fb_image_add_image(&image, &status->screen.screen_buf[0]);
 
 				//int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep);
 				//fb_screen_add_image(&status->screen, &image);
 
-				fb_screen_upturn_buf(&status->screen, 0);
+				//fb_screen_upturn_buf(&status->screen, 0);
 
 				//int fb_image_destory(FB_IMAGE *imagep);
 				fb_image_destory(&image);
@@ -685,6 +700,8 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 #endif
 		case KEY_UP:		/* select up image */
 			maindeal_img_setcurpos(status, 1);
+#if 0
+
 			//int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
 			maindeal_effects_blinds(status, 9, DB_EFFECTS_RIGHT);
 			maindeal_effects_blinds(status, 9, DB_EFFECTS_LEFT);
@@ -696,7 +713,27 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			maindeal_effects_move(status, 10, DB_EFFECTS_LEFT);
 			maindeal_effects_move(status, 10, DB_EFFECTS_RIGHT);
 
+#endif
+			//int maindeal_effects_radiation(struct mainstatus *status, int speed, int direction)
+			maindeal_effects_radiation(status, 20, DB_EFFECTS_LEFT_TOP);
+			maindeal_effects_radiation(status, 20, DB_EFFECTS_RIGHT_TOP);
+			maindeal_effects_radiation(status, 20, DB_EFFECTS_LEFT_BOTTOM);
+			maindeal_effects_radiation(status, 20, DB_EFFECTS_RIGHT_BOTTOM);
+			maindeal_effects_radiation(status, 20, DB_EFFECTS_CENTER);
+
+			maindeal_effects_rect(status, 20, DB_EFFECTS_LEFT_TOP);
+			maindeal_effects_rect(status, 20, DB_EFFECTS_RIGHT_TOP);
+			maindeal_effects_rect(status, 20, DB_EFFECTS_LEFT_BOTTOM);
+			maindeal_effects_rect(status, 20, DB_EFFECTS_RIGHT_BOTTOM);
+			maindeal_effects_rect(status, 20, DB_EFFECTS_INNER);
+
+			maindeal_effects_abstract(status);
+
+			maindeal_effects_fade(status, DB_EFFECTS_INNER);
+			maindeal_effects_fade(status, DB_EFFECTS_OUTTER);
+
 			break;
+
 		case KEY_DOWN:		/* select down image */
 
 			break;
@@ -955,6 +992,10 @@ int maindeal_img_view_switch(struct mainstatus *status, int num)
 
 	maindeal_img_view(status);
 	
+	for(i = 0; i < 2; i++){
+		fb_image_setpos(&status->screen.screen_buf[i], 0, 0);
+	}
+
 	return 0;
 }
 
@@ -1090,4 +1131,80 @@ int maindeal_effects_move(struct mainstatus *status, int slow, int direction)
 
 	return 0;
 
+}
+
+/*
+ * show current image with radiation effects
+ */
+int maindeal_effects_radiation(struct mainstatus *status, int speed, int rad_flag)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+	effects_img_radiation(&status->screen, &image, speed, rad_flag);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
+
+}
+
+/*
+ * show current image with radiation effects
+ */
+int maindeal_effects_rect(struct mainstatus *status, int speed, int flag)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+	effects_img_rect(&status->screen, &image, speed, flag);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
+
+}
+
+int maindeal_effects_abstract(struct mainstatus *status)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+	effects_img_abstract(&status->screen, &image);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
+}
+
+int maindeal_effects_fade(struct mainstatus *status, int flag)
+{
+	FB_IMAGE image;
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
+			&image);
+
+	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+	effects_img_fade(&status->screen, &image, flag);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	return 0;
 }

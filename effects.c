@@ -8,10 +8,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <unistd.h>
 #include "effects.h"
 #include "jpeg.h"
 #include "screen.h"
+#include "line.h"
+#include "plane.h"
+#include "pixel.h"
 
 /*
  * get a optimized image according screen
@@ -232,7 +236,6 @@ int effects_img_move(FB_SCREEN *screenp, FB_IMAGE *imagep, int slow, int directi
 		fb_screen_upturn_buf(screenp, 1);
 
 		break;
-
 	default:
 		break;
 
@@ -245,3 +248,304 @@ int effects_img_move(FB_SCREEN *screenp, FB_IMAGE *imagep, int slow, int directi
 	return 0;
 }
 
+/*
+ * Radiation effects
+ */
+int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int rad_flag)
+{
+	int i, j;
+	FB_POINT point1, point2;
+
+	fb_screen_set_trans(screenp, 255);
+
+	switch(rad_flag){
+	case DB_EFFECTS_LEFT_TOP:
+		for(i = 0; i < screenp->height; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, 0, 0, 0);
+				fb_set_pixel(&point2, screenp->width - 1, i + j, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+	
+		for(i = screenp->width - 1; i >= 0; i -= speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, 0, 0, 0);
+				fb_set_pixel(&point2, i - j, screenp->height - 1, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+
+		break;
+	case DB_EFFECTS_RIGHT_TOP:
+		for(i = 0; i < screenp->height; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, screenp->width - 1, 0, 0);
+				fb_set_pixel(&point2, 0, i + j, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+	
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, screenp->width - 1, 0, 0);
+				fb_set_pixel(&point2, i + j, screenp->height, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+
+		break;
+	case DB_EFFECTS_LEFT_BOTTOM:
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, 0, screenp->height - 1, 0);
+				fb_set_pixel(&point2, i + j, 0, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+	
+		for(i = 0; i < screenp->height; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, 0, screenp->height - 1, 0);
+				fb_set_pixel(&point2, screenp->width - 1, i + j, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+
+		break;
+	case DB_EFFECTS_RIGHT_BOTTOM:
+		for(i = screenp->width; i >= 0; i -= speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, screenp->width - 1, screenp->height - 1, 0);
+				fb_set_pixel(&point2, i - j, 0, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+	
+		for(i = 0; i < screenp->height; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point1, screenp->width - 1, screenp->height - 1, 0);
+				fb_set_pixel(&point2, 0, i + j, 0);
+				fb_draw_line_screen_trans(screenp, &point1,
+							  &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+
+		break;
+	case DB_EFFECTS_CENTER:
+		fb_set_pixel(&point1, screenp->width / 2, screenp->height / 2, 0);
+		/* right */
+		for(i = 0; i < screenp->height; i+=speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point2, screenp->width, i + j, 0);
+				fb_draw_line_screen_trans(screenp, &point1, &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+		/* bottom */
+		for(i = screenp->width; i >= 0; i-=speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point2, i - j, screenp->height - 1, 0);
+				fb_draw_line_screen_trans(screenp, &point1, &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+		/* left */
+		for(i = screenp->height; i >= 0; i -= speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point2, 0, i - j, 0);
+				fb_draw_line_screen_trans(screenp, &point1, &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+		/* top */
+		for(i = 0; i < screenp->width; i+=speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel(&point2, i + j, 0, 0);
+				fb_draw_line_screen_trans(screenp, &point1, &point2, 0);
+			}
+			fb_screen_update_trans(screenp);
+		}
+		
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+/*
+ * Rect effects
+ */
+int effects_img_rect(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag)
+{
+	int i, j;
+	int cx, cy;
+	FB_RECT rect;
+	FB_POINT point1;
+
+	fb_screen_set_trans(screenp, 255);
+
+	switch(flag){
+	case DB_EFFECTS_LEFT_TOP:
+		fb_set_pixel_trans(&point1, 0, 0, 0);
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				//int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
+				fb_rect_set(&rect, &point1, i + j, i + j);
+				//int fb_rect_draw_nofill_screen_trans(FB_SCREEN *screenp, FB_RECT *rectp, unsigned char trans) 
+				fb_rect_draw_nofill_screen_trans(screenp, &rect, 0);
+			}
+			fb_screen_update_trans(screenp);
+			
+		}
+
+		break;
+	case DB_EFFECTS_RIGHT_TOP:
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel_trans(&point1, screenp->width - 1 - i - j, 0, 0);
+				//int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
+				fb_rect_set(&rect, &point1, i + j, i + j);
+				//int fb_rect_draw_nofill_screen_trans(FB_SCREEN *screenp, FB_RECT *rectp, unsigned char trans) 
+				fb_rect_draw_nofill_screen_trans(screenp, &rect, 0);
+			}
+			fb_screen_update_trans(screenp);
+			
+		}
+
+		break;
+	case DB_EFFECTS_LEFT_BOTTOM:
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel_trans(&point1, 0, screenp->width - 1 - i - j, 0);
+				//int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
+				fb_rect_set(&rect, &point1, i + j, i + j);
+				//int fb_rect_draw_nofill_screen_trans(FB_SCREEN *screenp, FB_RECT *rectp, unsigned char trans) 
+				fb_rect_draw_nofill_screen_trans(screenp, &rect, 0);
+			}
+			fb_screen_update_trans(screenp);
+			
+		}
+
+		break;
+	case DB_EFFECTS_RIGHT_BOTTOM:
+		for(i = 0; i < screenp->width; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel_trans(&point1, screenp->width - 1 - i - j, 
+						   screenp->height - 1 - i - j, 0);
+				//int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
+				fb_rect_set(&rect, &point1, i + j, i + j);
+				//int fb_rect_draw_nofill_screen_trans(FB_SCREEN *screenp, FB_RECT *rectp, unsigned char trans) 
+				fb_rect_draw_nofill_screen_trans(screenp, &rect, 0);
+			}
+			fb_screen_update_trans(screenp);
+			
+		}
+
+		break;
+	case DB_EFFECTS_INNER:
+		cx = screenp->width / 2;
+		cy = screenp->height / 2;
+
+		for(i = 0; i < cx; i += speed){
+			for(j = 0; j < speed; j++){
+				fb_set_pixel_trans(&point1, i + j , i + j, 0);
+				//int fb_rect_set(FB_RECT *fb_rectp, FB_POINT *point, int width, int height);
+				fb_rect_set(&rect, &point1, screenp->width - 2 * (i + j), screenp->height );
+				//int fb_rect_draw_nofill_screen_trans(FB_SCREEN *screenp, FB_RECT *rectp, unsigned char trans) 
+				fb_rect_draw_nofill_screen_trans(screenp, &rect, 0);
+			}
+				
+			fb_screen_update_trans(screenp);
+			
+		}
+		
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+/*
+ * Abstract effects
+ */
+int effects_img_abstract(FB_SCREEN *screenp, FB_IMAGE *imagep)
+{
+	int i, j, k;
+	unsigned char *p;
+
+
+	for(k = 0; k < 128; k++){
+		p = screenp->screenstart;
+		for(i = 0; i < screenp->height; i++){
+			for(j = 0; j < screenp->width; j++){
+				*p = *p - 2;
+				p++;
+				*p = *p - 2;
+				p++;
+				*p = *p - 2;
+				p++;
+
+				p++;
+			}
+		}
+		fb_screen_update(screenp);
+	}
+	
+	
+	return 0;
+}
+
+/*
+ * Fade effects
+ *
+ * OPTION: DB_EFFECTS_INNER || DB_EFFECTS_OUTTER
+ */
+int effects_img_fade(FB_SCREEN *screenp, FB_IMAGE *imagep, int flag)
+{
+	int i;
+
+	switch(flag){
+	case DB_EFFECTS_INNER:
+		fb_screen_set_trans(screenp, 0);
+		for(i = 0; i < 256; i++){
+			//int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans);
+			fb_screen_set_trans(screenp, i);
+			//int fb_screen_update_trans(FB_SCREEN *screenp);
+			fb_screen_update_trans(screenp);
+		}
+		break;
+
+	case DB_EFFECTS_OUTTER:
+		fb_screen_set_trans(screenp, 255);
+		for(i = 255; i >= 0; i--){
+			//int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans);
+			fb_screen_set_trans(screenp, i);
+			//int fb_screen_update_trans(FB_SCREEN *screenp);
+			fb_screen_update_trans(screenp);
+		}
+		break;
+		
+	default:
+		break;
+	}
+	
+	return 0;
+}

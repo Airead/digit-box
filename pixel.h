@@ -21,8 +21,10 @@ typedef struct point{
 }FB_POINT;
 
 int fb_set_pixel(FB_POINT *point, int x, int y, COLOR_32 color);
+int fb_set_pixel_trans(FB_POINT *point, int x, int y, unsigned char trans);
 int fb_draw_pixel(struct framebuffer *fbp, FB_POINT *point);
 int fb_draw_pixel_screen(FB_SCREEN *screenp, FB_POINT *point);
+int fb_draw_pixel_screen_trans(FB_SCREEN *screenp, FB_POINT *point);
 unsigned long fb_formatRGB(unsigned char red, unsigned char green, unsigned char blue);
 
 #endif

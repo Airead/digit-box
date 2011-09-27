@@ -443,3 +443,114 @@ int fb_screen_add_image_bylinev(FB_IMAGE *imagep, FB_SCREEN *screenp, int line)
 
 	return 0;
 }
+
+/*
+ * change screen with trans
+ */
+int fb_screen_change_trans(FB_SCREEN *screenp, unsigned char trans)
+{
+	int i, j;
+	unsigned char *p;
+
+	p = screenp->screenstart;
+
+	for(i = 0; i < screenp->height; i++){
+		for(j = 0; j < screenp->width; j++){
+			if(*p > trans){
+				*p -= trans;
+			}else{
+				*p = 0;
+			}
+			p++;
+
+			if(*p > trans){
+				*p -= trans;
+			}else{
+				*p = 0;
+			}
+			p++;
+			
+			if(*p > trans){
+				*p -= trans;
+			}else{
+				*p = 0;
+			}
+			p++;
+
+			*p = trans;
+			p++;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * set screen with trans
+ */
+int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans)
+{
+	int i, j;
+	unsigned char *p;
+
+	p = screenp->screenstart;
+
+	for(i = 0; i < screenp->height; i++){
+		for(j = 0; j < screenp->width; j++){
+			p[3] = trans;
+			p += 4;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * update screen with trans
+ */
+int fb_screen_update_trans(FB_SCREEN *screenp)
+{
+	int i, j;
+	unsigned char *p;
+	unsigned char *q;
+	unsigned char trans;
+
+	p = screenp->screenstart;
+	q = screenp->screen_buf[0].imagestart;
+
+	for(i = 0; i < screenp->height; i++){
+		for(j = 0; j < screenp->width; j++){
+			trans = p[3];
+			if(*p > trans){
+				*q = *p - trans;
+			}else{
+				*q = 0;
+			}
+			p++;
+			q++;
+
+			if(*p > trans){
+				*q = *p - trans;
+			}else{
+				*q = 0;
+			}
+			p++;
+			q++;
+			
+			if(*p > trans){
+				*q = *p - trans;
+			}else{
+				*q = 0;
+			}
+			p++;
+			q++;
+
+			p++;
+			q++;
+
+		}
+	}
+
+	fb_screen_upturn_buf(screenp, 0);
+	return 0;
+}

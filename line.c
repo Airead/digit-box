@@ -192,3 +192,65 @@ int fb_draw_line_study(FB *fbp, FB_POINT *point1, FB_POINT *point2)
 
 	return 0;
 }
+
+/*
+ * Just draw trans value
+ */
+int fb_draw_line_screen_trans(FB_SCREEN *screenp, FB_POINT *point1, FB_POINT *point2,
+			      unsigned char trans)
+{
+	/* generalized integer Bresenham's algorithm for all quadrants
+	 * the line end points aire (x1, y1) and (x2 , y2), assumed not equal
+	 * all variables are assumed integer*/
+
+	/* initialize variables */
+	FB_POINT point;
+	int x, y, dx, dy;
+	int s1, s2;
+	int e;			/* err(math) */
+	int i, tmp, interchange;
+
+	x = point1->x;
+	y = point1->y;
+	dx = abs(point2->x - x);
+	dy = abs(point2->y - y);
+	s1 = fb_line_sign(point2->x - point1->x);
+	s2 = fb_line_sign(point2->y - point1->y);
+	
+	/* interchange dx and dy depending on the slope of the line */
+	if(dy > dx){
+		tmp = dx;
+		dx = dy;
+		dy = tmp;
+		interchange = 1;
+	}else{
+		interchange = 0;
+	}
+
+	/* initialize the error term to compensate for a non zero intercept */
+	e = 2 * dy - dx;
+
+	/* main loop */
+	for(i = 0; i <= dx; i++){
+		fb_set_pixel_trans(&point, x, y, trans);
+		fb_draw_pixel_screen_trans(screenp, &point);
+		while(e > 0){
+			if(interchange == 1){
+				x = x + s1;
+			}else{
+				y = y + s2;
+			}
+			e = e - 2 * dx;
+		}
+
+		if(interchange == 1){
+			y = y + s2;
+		}else{
+			x = x + s1;
+		}
+		e = e + 2 * dy;
+	}
+
+	return 0;
+
+}

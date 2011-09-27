@@ -58,5 +58,9 @@ int maindeal_text_show(struct mainstatus *status);
 int maindeal_mp3(struct mainstatus *status, uint16_t code);
 int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
 int maindeal_effects_move(struct mainstatus *status, int slow, int direction);
+int maindeal_effects_radiation(struct mainstatus *status, int speed, int rad_flag);
+int maindeal_effects_rect(struct mainstatus *status, int speed, int flag);
+int maindeal_effects_abstract(struct mainstatus *status);
+int maindeal_effects_fade(struct mainstatus *status, int flag);
 
 #endif
