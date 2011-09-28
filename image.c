@@ -273,20 +273,16 @@ int fb_image_rotate2(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian)
 	for(i = 0; i < retimgp->height; i++){
 		for(j = 0; j < retimgp->width; j++){
 			ox = (j - h) * cos(radian) + (i - l) * sin(radian) + h - ax;
-			oy = (i - l) * cos(radian) - (j - h) * sin(radian) + l - ay
-;
+			oy = (i - l) * cos(radian) - (j - h) * sin(radian) + l - ay;
 
 			//ox = j * cos(radian) + i * sin(radian);
 			//oy = i * cos(radian) - j * sin(radian);
-			
 
 			ret_loc = (i * retimgp->width + j) * retimgp->components;
 			img_loc = (oy * imagep->width + ox) * imagep->components;
-			if(i < retimgp->height && j  < retimgp->width){
-				if(0 <= ox && ox < imagep->width && 0 <= oy && oy <= imagep->height){
-					for(k = 0; k < 4; k++){
-						retimgp->imagestart[ret_loc + k] = imagep->imagestart[img_loc + k];
-					}
+			if(0 <= ox && ox < imagep->width && 0 <= oy && oy < imagep->height){
+				for(k = 0; k < 4; k++){
+					retimgp->imagestart[ret_loc + k] = imagep->imagestart[img_loc + k];
 				}
 			}
 		}
@@ -308,6 +304,7 @@ int fb_image_rotate2(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian)
  */
 int fb_image_destory(FB_IMAGE *imagep)
 {
+
 	free(imagep->imagestart);
 
 	return 0;
@@ -355,7 +352,7 @@ int fb_image_full_image(FB_IMAGE *imagep, FB_IMAGE *retimgp, int lock)
 {
 	int i, j, k;
 	int nx, ny;
-	int ox, oy;
+	int ox, oy;		/* offset x, y */
 	unsigned long tm_loc, loc, offset;
 	float px, py;
 
@@ -377,8 +374,8 @@ int fb_image_full_image(FB_IMAGE *imagep, FB_IMAGE *retimgp, int lock)
 
 	memset(retimgp->imagestart, 0, retimgp->imagesize);
 
-	for(i = 0; i < retimgp->height; i++){
-		for(j = 0; j < retimgp->width; j++){
+	for(i = 0; i < retimgp->height - oy; i++){
+		for(j = 0; j < retimgp->width - ox; j++){
 			nx = j * px;
 			ny = i * py;
 			tm_loc = (i * retimgp->width + j) * retimgp->components + offset;

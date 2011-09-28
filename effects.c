@@ -135,6 +135,7 @@ int effects_img_blinds(FB_SCREEN *screenp, FB_IMAGE *imagep, int num, int direct
 
 	}
 
+	memcpy(screenp->screenstart, screenp->fb_start, screenp->screensize);
 
 	return 0;
 }

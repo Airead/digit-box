@@ -238,6 +238,10 @@ int maindeal_mode(struct mainstatus *status, uint16_t code)
 		status->mode = DB_SLIDE_MODE;
 		break;
 
+	case KEY_8:
+		status->mode = DB_JOKE_MODE;
+		break;
+
 	default:
 		break;
 	}
@@ -262,7 +266,10 @@ int maindeal_option(struct mainstatus *status, uint16_t code)
 	case DB_SLIDE_MODE:	/* auto show image */
 		maindeal_option_slide(status, code);
 		break;
-
+		
+	case DB_JOKE_MODE:	/* Only a joke */
+		maindeal_option_joke(status, code);
+		break;
 	default:
 		fprintf(stderr, "%s: mode error!\n", __func__);
 		break;
@@ -623,6 +630,7 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
+	int mini_loc;
 
 	switch(status->view_flag){
 	case 0:
@@ -725,6 +733,7 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 
 #endif
 			//int maindeal_effects_radiation(struct mainstatus *status, int speed, int direction)
+#if 0
 			maindeal_effects_radiation(status, 20, DB_EFFECTS_LEFT_TOP);
 			maindeal_effects_radiation(status, 20, DB_EFFECTS_RIGHT_TOP);
 			maindeal_effects_radiation(status, 20, DB_EFFECTS_LEFT_BOTTOM);
@@ -741,6 +750,7 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 
 			maindeal_effects_fade(status, 3, DB_EFFECTS_INNER);
 			maindeal_effects_fade(status, 3, DB_EFFECTS_OUTTER);
+#endif
 
 			break;
 
@@ -754,8 +764,12 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 	case 1:
 		switch(code){
 		case KEY_SPACE:		/* show image */
-			status->img_cur_pos = 
-				status->img_mini_cur_pos + status->img_mini_offset;
+			mini_loc = status->img_mini_cur_pos + status->img_mini_offset;
+			if(mini_loc >= status->img_list_len){
+				mini_loc -= status->img_list_len;
+			}
+			status->img_cur_pos = mini_loc;
+			
 			maindeal_img_show_fullscr(status);
 			status->view_flag = 0;
 			break;
@@ -801,6 +815,10 @@ int maindeal_img_view(struct mainstatus *status)
 	maindeal_img_view_add(status);
 
 	loc = status->img_mini_cur_pos + status->img_mini_offset;
+	if(loc >= status->img_list_len){
+		loc = loc - status->img_list_len;
+	}
+
 	proportion = 1;
 
 	while(proportion < 1.1){
@@ -857,7 +875,13 @@ int maindeal_img_view_add(struct mainstatus *status)
 
 	k = status->img_mini_cur_pos;
 	for(i = 0; i < DB_VIEW_MODE_NUM; i++){
+
 		for(j = 0; j < DB_VIEW_MODE_NUM; j++){
+			/* rewind */
+			if(k >= status->img_list_len){
+				k = 0;
+			}
+
 			xpos = (i + 1) * sp * 8 + i * si * 8;
 			ypos = (j + 1) * sp * 6 + j * si * 6;
 			//int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
@@ -1220,7 +1244,7 @@ int maindeal_effects_fade(struct mainstatus *status, int speed, int flag)
 }
 
 /*
- * Deal test mode code
+ * Deal slide mode code
  */
 int maindeal_option_slide(struct mainstatus *status, uint16_t code)
 {
@@ -1292,6 +1316,86 @@ int maindeal_option_slide_autoplay(struct mainstatus *status)
 	}
 
 	maindeal_img_setcurpos(status, 1);
+
+	return 0;
+}
+
+/*
+ * Deal joke mode code
+ */
+int maindeal_option_joke(struct mainstatus *status, uint16_t code)
+{
+	FB_IMAGE retimg;
+	FB_IMAGE rotaimg;
+	FB_IMAGE image;
+	int running;
+	uint16_t cur_key_code;
+	float radian;
+	int loc;
+	int i, j, pad;
+
+	//int fb_image_init(FB_IMAGE *imagep, int width, int height, int components);
+	fb_image_init(&rotaimg, 100, 100, 4);
+
+
+	loc = status->img_mini_cur_pos + status->img_mini_offset;
+	if(loc >= status->img_list_len){
+		loc -= status->img_list_len;
+	}
+
+	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep);
+	effects_img_get(&status->screen, status->img_list[loc], &image);
+
+	//int fb_image_full_image(FB_IMAGE *imagep, FB_IMAGE *retimgp, int flag);
+	fb_image_full_image(&image, &rotaimg, IMAGE_FULL_LOCK);
+
+	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_destory(&image);
+
+	fb_screen_clear(&status->screen);
+
+	running = 1;
+	radian = 0;
+	cur_key_code = 0;
+	fb_image_setpos(&rotaimg, 200, 200);
+
+	fb_image_rotate2(&rotaimg, &retimg, radian);
+	/* if you not understand, you should ignore it! it's math! */
+	pad = (status->screen.width - 3 * retimg.width) / 4 / 8;
+
+	/* main loop */
+	while(running && radian > -1){
+		common_change_code(&cur_key_code, global_key_code);
+
+		if(cur_key_code != 0 && cur_key_code != KEY_8){
+			running = 0;
+		}
+		
+		//int fb_image_rotate(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian)
+		fb_image_rotate2(&rotaimg, &retimg, radian);
+		
+		for(i = 0; i < 3; i++){
+			for(j = 0; j < 3; j++){
+				fb_image_setpos(&retimg, (i + 1) * pad * 8 + i * retimg.width,
+						(j + 1) * pad * 6 + j * retimg.height - 50);
+				fb_screen_add_image(&status->screen, &retimg);
+			}
+		}
+		
+		fb_screen_update(&status->screen);
+		
+		fb_image_destory(&retimg);
+		
+		radian += 0.05;
+
+		usleep(1000);
+	}
+	
+	status->mode = DB_VIEW_MODE;
+	status->view_flag = 1;
+	maindeal_img_view_entry(status);
+
+	fb_image_destory(&rotaimg);
 
 	return 0;
 }

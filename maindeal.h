@@ -65,5 +65,6 @@ int maindeal_effects_abstract(struct mainstatus *status);
 int maindeal_effects_fade(struct mainstatus *status, int speed, int flag);
 int maindeal_option_slide(struct mainstatus *status, uint16_t code);
 int maindeal_option_slide_autoplay(struct mainstatus *status);
+int maindeal_option_joke(struct mainstatus *status, uint16_t code);
 
 #endif
