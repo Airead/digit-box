@@ -491,6 +491,13 @@ int maindeal_img_show_fullscr(struct mainstatus *status)
 
 		if(retimg.width > status->screen.width ||
 		   retimg.height > status->screen.height){
+			/*
+			 *   In the beginning I did not notice this, so I found
+			 * my memory leak. It takes my many hours, I will
+			 * remeber it!
+			 */
+			fb_image_destory(&retimg);
+
 			break;
 		}
 
@@ -506,6 +513,7 @@ int maindeal_img_show_fullscr(struct mainstatus *status)
 		
 		proportion += 0.05;
 	}
+
 	//int fb_image_destory(FB_IMAGE *imagep);
 	fb_image_destory(&image);
 
