@@ -34,6 +34,6 @@ int effects_img_move(FB_SCREEN *screenp, FB_IMAGE *imagep, int slow, int directi
 int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int rad_flag);
 int effects_img_rect(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag);
 int effects_img_abstract(FB_SCREEN *screenp, FB_IMAGE *imagep);
-int effects_img_fade(FB_SCREEN *screenp, FB_IMAGE *imagep, int flag);
+int effects_img_fade(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag);
 
 #endif

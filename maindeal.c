@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -29,6 +30,8 @@
 #include "weather.h"
 #include "effects.h"
 #include "line.h"
+
+extern uint16_t global_key_code;
 
 /*
  * initialize mainstatus
@@ -159,7 +162,9 @@ int maindeal_mainstatus_init(struct mainstatus *status)
 		return -1;
 	}
 	
-	maindeal_img_view(status);
+	/* show welcome */
+	maindeal_img_view_entry(status);
+	status->view_flag = 1;
 
 	//int config_close(FILE *fp);
 	config_close(config_fp);
@@ -214,7 +219,8 @@ int maindeal_common_dealcode(struct mainstatus *status, uint16_t code)
 /*
  * major mode:
  *   1. Test mode: KEY_MINUS ('-')
- *   2. View mode: KEY_1 ('1')
+ *   2. View mode: KEY_1 ('2')
+ *   3. Slide mode: KEY_3 ('3')
  */
 int maindeal_mode(struct mainstatus *status, uint16_t code)
 {
@@ -245,12 +251,16 @@ int maindeal_mode(struct mainstatus *status, uint16_t code)
 int maindeal_option(struct mainstatus *status, uint16_t code)
 {
 	switch(status->mode){
-	case DB_TEST_MODE:
+	case DB_TEST_MODE:	/* just test */
 		maindeal_option_test(status, code);
 		break;
 
-	case DB_VIEW_MODE:
+	case DB_VIEW_MODE:	/* view image */
 		maindeal_option_view(status, code);
+		break;
+
+	case DB_SLIDE_MODE:	/* auto show image */
+		maindeal_option_slide(status, code);
 		break;
 
 	default:
@@ -613,14 +623,13 @@ int maindeal_mp3_play(struct mainstatus *status)
  */
 int maindeal_option_view(struct mainstatus *status, uint16_t code)
 {
-	static int space_flag = 1;	/* 0 for show, 1 for view */
 
-	switch(space_flag){
+	switch(status->view_flag){
 	case 0:
 		switch(code){
 		case KEY_SPACE:		/* view image */
 			maindeal_img_view_entry(status);
-			space_flag = 1;
+			status->view_flag = 1;
 			break;
 		case KEY_A:		/* left screen */
 
@@ -638,7 +647,7 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			break;
 #if _DEBUG_
 		case KEY_T:		/* Test some function */
-			/* test new function*/
+			/* The following lot codes just for interface to test new function */
 			maindeal_img_setcurpos(status, 1);
 			
 			{
@@ -698,7 +707,8 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			
 			break;
 #endif
-		case KEY_UP:		/* select up image */
+		case KEY_UP:		
+			/* The following lot codes just for test all effects */
 			maindeal_img_setcurpos(status, 1);
 #if 0
 
@@ -729,8 +739,8 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 
 			maindeal_effects_abstract(status);
 
-			maindeal_effects_fade(status, DB_EFFECTS_INNER);
-			maindeal_effects_fade(status, DB_EFFECTS_OUTTER);
+			maindeal_effects_fade(status, 3, DB_EFFECTS_INNER);
+			maindeal_effects_fade(status, 3, DB_EFFECTS_OUTTER);
 
 			break;
 
@@ -747,7 +757,7 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			status->img_cur_pos = 
 				status->img_mini_cur_pos + status->img_mini_offset;
 			maindeal_img_show_fullscr(status);
-			space_flag = 0;
+			status->view_flag = 0;
 			break;
 		case KEY_A:		/* left screen */
 			maindeal_img_view_switch(status, -1);
@@ -1099,14 +1109,14 @@ int maindeal_effects_blinds(struct mainstatus *status, int num, int direction)
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_blinds(FB_SCREEN *screenp, FB_IMAGE *imagep, int num, int direction)
+
 	effects_img_blinds(&status->screen, &image, num, direction);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+
 	effects_img_destory(&image);
 
 	return 0;
@@ -1119,14 +1129,14 @@ int maindeal_effects_move(struct mainstatus *status, int slow, int direction)
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_blinds(FB_SCREEN *screenp, FB_IMAGE *imagep, int num, int direction)
+
 	effects_img_move(&status->screen, &image, slow, direction);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+
 	effects_img_destory(&image);
 
 	return 0;
@@ -1140,14 +1150,14 @@ int maindeal_effects_radiation(struct mainstatus *status, int speed, int rad_fla
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+
 	effects_img_radiation(&status->screen, &image, speed, rad_flag);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+
 	effects_img_destory(&image);
 
 	return 0;
@@ -1161,14 +1171,14 @@ int maindeal_effects_rect(struct mainstatus *status, int speed, int flag)
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+
 	effects_img_rect(&status->screen, &image, speed, flag);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+
 	effects_img_destory(&image);
 
 	return 0;
@@ -1179,32 +1189,109 @@ int maindeal_effects_abstract(struct mainstatus *status)
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
+
 	effects_img_abstract(&status->screen, &image);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+
 	effects_img_destory(&image);
 
 	return 0;
 }
 
-int maindeal_effects_fade(struct mainstatus *status, int flag)
+int maindeal_effects_fade(struct mainstatus *status, int speed, int flag)
 {
 	FB_IMAGE image;
 
-	//int effects_img_get(FB_SCREEN *screenp, char *imagename, FB_IMAGE *imagep)
+
 	effects_img_get(&status->screen, status->img_list[status->img_cur_pos],
 			&image);
 
-	//int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int direction);
-	effects_img_fade(&status->screen, &image, flag);
 
-	//int effects_img_destory(FB_IMAGE *imagep)
+	effects_img_fade(&status->screen, &image, speed, flag);
+
+
 	effects_img_destory(&image);
+
+	return 0;
+}
+
+/*
+ * Deal test mode code
+ */
+int maindeal_option_slide(struct mainstatus *status, uint16_t code)
+{
+	int running;
+	uint16_t cur_key_code;
+
+	/* main loop */
+	running = 1;
+	cur_key_code = 0;
+	while(running){
+		common_change_code(&cur_key_code, global_key_code);
+
+		if(cur_key_code != 0 && cur_key_code != KEY_3){
+				running = 0;
+		}
+
+		//maindeal_option_slide
+		maindeal_option_slide_autoplay(status);
+
+		sleep(1);
+	}
+
+	status->mode = DB_VIEW_MODE;
+	status->view_flag = 1;
+	maindeal_img_view_entry(status);
+
+	return 0;
+}
+
+/*
+ * slide auto play
+ */
+int maindeal_option_slide_autoplay(struct mainstatus *status)
+{
+	int speed;
+
+	//void srand(unsigned int seed);
+	srand(time(NULL));
+	
+	switch(rand() % 6){
+	case 0:			/* show fullscr */
+		//int maindeal_effects_abstract(struct mainstatus *status);
+		maindeal_effects_abstract(status);
+		break;
+	case 1:			/* blinds effects */
+		//int maindeal_effects_blinds(struct mainstatus *status, int num, int direction);
+		maindeal_effects_blinds(status, rand() % 30 + 1, rand() % 4);
+		break;
+	case 2:			/* move effects */
+		//int maindeal_effects_move(struct mainstatus *status, int slow, int direction);
+		maindeal_effects_move(status, rand() % 8 + 5,  rand() % 4);
+		break;
+	case 3:			/* radiation effects */
+		//int maindeal_effects_radiation(struct mainstatus *status, int speed, int rad_flag);
+		maindeal_effects_radiation(status, rand() % 20 + 10, rand() % 7 + 4);
+		break;
+	case 4:			/* rect effects */
+		//int maindeal_effects_rect(struct mainstatus *status, int speed, int flag);
+		maindeal_effects_rect(status, rand() % 10 + 10, rand() % 6 + 4);
+		break;
+	case 5:
+		speed = rand() % 10 + 9;
+		//int maindeal_effects_fade(struct mainstatus *status, int speed, int flag);
+		maindeal_effects_fade(status, speed, DB_EFFECTS_INNER);
+		maindeal_effects_fade(status, speed, DB_EFFECTS_OUTTER);
+		break;
+	default:
+		break;
+	}
+
+	maindeal_img_setcurpos(status, 1);
 
 	return 0;
 }

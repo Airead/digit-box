@@ -49,8 +49,19 @@ int fb_load_jpeg(FB_IMAGE *imagep, char *filename)
 	jpeg_start_decompress(&cinfo);
 
 	/* malloc */
-	imagearr = (unsigned char*)malloc(imagep->imagesize);
-	row_pointer[0] = (unsigned char *)malloc(imagep->width * imagep->components);
+	if((imagearr = (unsigned char*)malloc(imagep->imagesize)) == NULL){
+		fprintf(stderr, "%s: malloc() failed: %s\n", __func__,
+			strerror(errno));
+		return -1;
+	}
+
+	if((row_pointer[0] = (unsigned char *)malloc(
+		    imagep->width * imagep->components)) == NULL){
+		
+		fprintf(stderr, "%s: malloc() failed: %s\n", __func__,
+			strerror(errno));
+		return -1;
+	}
 	
 	while(cinfo.output_scanline < cinfo.image_height){
 		jpeg_read_scanlines(&cinfo, row_pointer, 1);

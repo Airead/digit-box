@@ -28,8 +28,10 @@
 #include "maindeal.h"
 #include "screen.h"
 
+uint16_t global_auto_flag;
 uint16_t global_key_code;	/* pressed key code */
 pthread_mutex_t key_code_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 int main(int argc, char *argv[])
 {	
@@ -71,12 +73,14 @@ int main(int argc, char *argv[])
 		common_change_code(&cur_key_code, global_key_code);
 
 		if(global_key_code != 0){
-			common_change_code(&global_key_code, 0);
+			/* global key code will be use in maindeal.c */
 			maindeal_common_dealcode(&status, cur_key_code);
+
+			common_change_code(&global_key_code, 0);
 		}
 
 		if(cur_key_code == KEY_Q){
-			break;
+			running = 0;
 		}
 
 		usleep(33);
@@ -100,11 +104,6 @@ int main(int argc, char *argv[])
 			   
 	maindeal_mainstatus_destory(&status);
 
-
-	//int umount(const char *target);
-			   
-
-			   
 	//int pthread_mutex_destroy(pthread_mutex_t *mutex);
 	if((errorcode = pthread_mutex_destroy(&key_code_mutex)) != 0){
 		fprintf(stderr, "pthread_mutex_destroy() failed: %s\n",

@@ -33,6 +33,7 @@ struct mainstatus{
 	int img_mini_cur_pos;
 	int img_mini_offset;
 	unsigned char weatherinfo[DB_NAME_MAX + 1];
+	int view_flag;	/* 0 for show, 1 for view */
 };
 
 int maindeal_mainstatus_init(struct mainstatus *status);
@@ -61,6 +62,8 @@ int maindeal_effects_move(struct mainstatus *status, int slow, int direction);
 int maindeal_effects_radiation(struct mainstatus *status, int speed, int rad_flag);
 int maindeal_effects_rect(struct mainstatus *status, int speed, int flag);
 int maindeal_effects_abstract(struct mainstatus *status);
-int maindeal_effects_fade(struct mainstatus *status, int flag);
+int maindeal_effects_fade(struct mainstatus *status, int speed, int flag);
+int maindeal_option_slide(struct mainstatus *status, uint16_t code);
+int maindeal_option_slide_autoplay(struct mainstatus *status);
 
 #endif

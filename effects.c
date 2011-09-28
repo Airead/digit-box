@@ -16,6 +16,7 @@
 #include "line.h"
 #include "plane.h"
 #include "pixel.h"
+#include "image.h"
 
 /*
  * get a optimized image according screen
@@ -255,7 +256,9 @@ int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int r
 {
 	int i, j;
 	FB_POINT point1, point2;
-
+	
+	fb_screen_clear(screenp);
+	fb_screen_add_image_fullscr(screenp, imagep);
 	fb_screen_set_trans(screenp, 255);
 
 	switch(rad_flag){
@@ -399,6 +402,8 @@ int effects_img_rect(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag)
 	FB_RECT rect;
 	FB_POINT point1;
 
+	fb_screen_clear(screenp);
+	fb_screen_add_image_fullscr(screenp, imagep);
 	fb_screen_set_trans(screenp, 255);
 
 	switch(flag){
@@ -491,6 +496,10 @@ int effects_img_abstract(FB_SCREEN *screenp, FB_IMAGE *imagep)
 	int i, j, k;
 	unsigned char *p;
 
+	fb_screen_clear(screenp);
+	//int fb_image_full_image(FB_IMAGE *imagep, FB_IMAGE *retimgp, int flag);
+	fb_image_full_image(imagep, &screenp->screen_buf[0], IMAGE_FULL_LOCK);
+	fb_screen_add_image(screenp, &screenp->screen_buf[0]);
 
 	for(k = 0; k < 128; k++){
 		p = screenp->screenstart;
@@ -518,29 +527,35 @@ int effects_img_abstract(FB_SCREEN *screenp, FB_IMAGE *imagep)
  *
  * OPTION: DB_EFFECTS_INNER || DB_EFFECTS_OUTTER
  */
-int effects_img_fade(FB_SCREEN *screenp, FB_IMAGE *imagep, int flag)
+int effects_img_fade(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag)
 {
 	int i;
 
 	switch(flag){
 	case DB_EFFECTS_INNER:
 		fb_screen_set_trans(screenp, 0);
-		for(i = 0; i < 256; i++){
+		for(i = 0; i < 256; i += speed){
 			//int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans);
 			fb_screen_set_trans(screenp, i);
 			//int fb_screen_update_trans(FB_SCREEN *screenp);
 			fb_screen_update_trans(screenp);
 		}
+		fb_screen_set_trans(screenp, 255);
+		fb_screen_update_trans(screenp);
 		break;
 
 	case DB_EFFECTS_OUTTER:
+		fb_screen_clear(screenp);
+		fb_screen_add_image_fullscr(screenp, imagep);
 		fb_screen_set_trans(screenp, 255);
-		for(i = 255; i >= 0; i--){
+		for(i = 255; i >= 0; i -= speed){
 			//int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans);
 			fb_screen_set_trans(screenp, i);
 			//int fb_screen_update_trans(FB_SCREEN *screenp);
 			fb_screen_update_trans(screenp);
 		}
+		fb_screen_set_trans(screenp, 0);
+		fb_screen_update_trans(screenp);
 		break;
 		
 	default:
