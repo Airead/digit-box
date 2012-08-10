@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 		
 		for(i = 0; i < (int)(rb/sizeof(struct input_event)); i++){
 			if(EV_KEY == ev[i].type){
+				fprintf(stdout, "%d\n", ev[i].code);
 				if(ev[i].value == 1 || ev[i].value == 2){
 					if(ev[i].code == KEY_UP){
 						fprintf(stdout, "UP\n");
