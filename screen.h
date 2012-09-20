@@ -26,6 +26,7 @@
 typedef struct screen{
 	int width;
 	int height;
+    unsigned long fwidth;
 	unsigned long screensize;
 	long pixelbits;
 	unsigned char *screenstart; /* screen mem */

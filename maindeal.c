@@ -667,8 +667,8 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			maindeal_img_setcurpos(status, 1);
 			
 			{
-				FB_RECT rect;
-				FB_POINT point1, point2;
+//				FB_RECT rect;
+//				FB_POINT point1, point2;
 				FB_IMAGE image;
 				int i;
 
@@ -754,12 +754,12 @@ int maindeal_option_view(struct mainstatus *status, uint16_t code)
 			maindeal_effects_rect(status, 20, DB_EFFECTS_RIGHT_BOTTOM);
 			maindeal_effects_rect(status, 20, DB_EFFECTS_INNER);
 
-			maindeal_effects_abstract(status);
 
 			maindeal_effects_fade(status, 3, DB_EFFECTS_INNER);
 			maindeal_effects_fade(status, 3, DB_EFFECTS_OUTTER);
 #endif
 
+			maindeal_effects_abstract(status);
 			break;
 
 		case KEY_DOWN:		/* select down image */
@@ -890,8 +890,8 @@ int maindeal_img_view_add(struct mainstatus *status)
 				k = 0;
 			}
 
-			xpos = (i + 1) * sp * 8 + i * si * 8;
-			ypos = (j + 1) * sp * 6 + j * si * 6;
+			xpos = (i + 1) * sp * 13 + i * si * 13;
+			ypos = (j + 1) * sp * 7 + j * si * 7;
 			//int fb_image_setpos(FB_IMAGE *imagep, int x, int y);
 			fb_image_setpos(&status->img_list_mini[k], xpos, ypos);
 
@@ -957,8 +957,8 @@ int maindeal_img_get_minimg(struct mainstatus *status)
 		//int fb_image_getmini(FB_IMAGE *imagep, FB_IMAGE *retimgp, 
 		//                    int img_width, int img_height)
 		fb_image_getmini(&img_tmp, &status->img_list_mini[i], 
-				 DB_VIEW_MODE_PADIMAGE * 8,
-				 DB_VIEW_MODE_PADIMAGE * 6);
+				 DB_VIEW_MODE_PADIMAGE * 13,
+				 DB_VIEW_MODE_PADIMAGE * 7);
 		
 		
 		//int fb_image_destory(FB_IMAGE *imagep);

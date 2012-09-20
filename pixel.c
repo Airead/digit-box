@@ -38,7 +38,7 @@ int fb_draw_pixel(struct framebuffer *fbp, FB_POINT *point)
 		return 1;
 	}
 
-	locate = (point->y * fbp->fb_vinfo.xres + point->x) 
+	locate = (point->y * fbp->fb_finfo.line_length + point->x) 
 		* fbp->fb_vinfo.bits_per_pixel / 8;
 	
 	p = fbp->fb_start + locate;
@@ -67,7 +67,7 @@ int fb_draw_pixel_screen(FB_SCREEN *screenp, FB_POINT *point)
 		return 1;
 	}
 
-	locate = (point->y * screenp->width + point->x) 
+	locate = (point->y * screenp->fwidth + point->x) 
 		* screenp->pixelbits / 8;
 	
 	p =  screenp->screenstart + locate;
@@ -97,7 +97,7 @@ int fb_draw_pixel_screen_trans(FB_SCREEN *screenp, FB_POINT *point)
 		return 1;
 	}
 
-	locate = (point->y * screenp->width + point->x) 
+	locate = (point->y * screenp->fwidth + point->x) 
 		* (screenp->pixelbits >> 3);
 	
 	p =  screenp->screenstart + locate;

@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* close echo */
-	stty_echo_off();
+	//stty_echo_off();
 
 	//int thread_key_control_start(FILE *fp);
 	tid_key_ctrl = thread_key_control_start();

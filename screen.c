@@ -36,13 +36,14 @@ int fb_screen_init(FB_SCREEN *screenp, FB *fbp)
 	screenp->width = fbp->fb_vinfo.xres;
 	screenp->height = fbp->fb_vinfo.yres;
 	screenp->screensize = fbp->fb_screensize;
+    screenp->fwidth = fbp->fb_finfo.line_length / 4;
 	screenp->fb_start = fbp->fb_start;
 	screenp->pixelbits = fbp->fb_vinfo.bits_per_pixel;
 	screenp->screenstart = malloc(sizeof(char) * screenp->screensize);
 
 	for(i = 0; i < 2; i++){
 		//int fb_image_init(FB_IMAGE *imagep, int width, int height, int components);
-		fb_image_init(&screenp->screen_buf[i], screenp->width,
+		fb_image_init(&screenp->screen_buf[i], screenp->fwidth,
 			      screenp->height, screenp->pixelbits / 8);
 
 		fb_image_setpos(&screenp->screen_buf[i], 0, 0);
@@ -75,6 +76,7 @@ int fb_screen_info(FB_SCREEN *screenp)
 	fprintf(stdout,"----------------------------------------\n");
 	fprintf(stdout, "screen information\n");
 	fprintf(stdout, "width: %d\n", screenp->width);
+	fprintf(stdout, "fix width: %lu\n", screenp->fwidth);
 	fprintf(stdout, "height: %d\n", screenp->height);
 	fprintf(stdout, "screensize: %lu\n", screenp->screensize);
 	fprintf(stdout, "pixel bits: %lu\n", screenp->pixelbits);
@@ -119,7 +121,7 @@ int fb_screen_add_image(FB_SCREEN *screenp, FB_IMAGE *imagep)
 	for(j = 0; j < imagep->height; j++){
 		/* vertical overflow check */
 		if(0 < imagep->y + j && imagep->y + j < screenp->height){
-			sc_loc = ((imagep->y + j) * screenp->width + imagep->x) * screenp->pixelbits / 8;
+			sc_loc = ((imagep->y + j) * screenp->fwidth + imagep->x) * screenp->pixelbits / 8;
 			im_loc = j * imagep->width * imagep->components;
 #if TEST		
 			if(j > 200){
@@ -401,7 +403,7 @@ int fb_screen_add_image_byline(FB_IMAGE *imagep, FB_SCREEN *screenp, int line)
 	
 	/* vertical overflow check */
 	if(0 < imagep->y + j && imagep->y + j < screenp->height){
-		ret_loc = ((imagep->y + j) * screenp->width + imagep->x) * imagep->components;
+		ret_loc = ((imagep->y + j) * screenp->fwidth + imagep->x) * imagep->components;
 		im_loc = j * imagep->width * imagep->components;
 
 		/* horizontal overflow check */
@@ -441,7 +443,7 @@ int fb_screen_add_image_bylinev(FB_IMAGE *imagep, FB_SCREEN *screenp, int line)
 	for(j = 0; j < screenp->height; j++){
 		/* vertical overflow check */
 		if(0 < imagep->y + j && imagep->y + j < screenp->height){
-			ret_loc = ((imagep->y + j) * screenp->width + line) * imagep->components;
+			ret_loc = ((imagep->y + j) * screenp->fwidth + line) * imagep->components;
 			im_loc = (j * imagep->width + line) * imagep->components;
 
 			/* horizontal overflow check */
@@ -465,7 +467,7 @@ int fb_screen_change_trans(FB_SCREEN *screenp, unsigned char trans)
 	p = screenp->screenstart;
 
 	for(i = 0; i < screenp->height; i++){
-		for(j = 0; j < screenp->width; j++){
+		for(j = 0; j < screenp->fwidth; j++){
 			if(*p > trans){
 				*p -= trans;
 			}else{
@@ -506,7 +508,7 @@ int fb_screen_set_trans(FB_SCREEN *screenp, unsigned char trans)
 	p = screenp->screenstart;
 
 	for(i = 0; i < screenp->height; i++){
-		for(j = 0; j < screenp->width; j++){
+		for(j = 0; j < screenp->fwidth; j++){
 			p[3] = trans;
 			p += 4;
 		}
@@ -529,7 +531,7 @@ int fb_screen_update_trans(FB_SCREEN *screenp)
 	q = screenp->screen_buf[0].imagestart;
 
 	for(i = 0; i < screenp->height; i++){
-		for(j = 0; j < screenp->width; j++){
+		for(j = 0; j < screenp->fwidth; j++){
 			trans = p[3];
 			if(*p > trans){
 				*q = *p - trans;

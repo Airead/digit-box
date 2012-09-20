@@ -44,7 +44,7 @@ int fb_open(char *fbname, struct framebuffer *fbp)
 	}
 	
 	/* get screen size according to vinfo */
-	fbp->fb_screensize = fbp->fb_vinfo.xres * fbp->fb_vinfo.yres
+	fbp->fb_screensize = fbp->fb_finfo.line_length / 4 * fbp->fb_vinfo.yres
 		* fbp->fb_vinfo.bits_per_pixel / 8;
 	
 	/* get frame buffer start pointer via mmap */
@@ -57,11 +57,11 @@ int fb_open(char *fbname, struct framebuffer *fbp)
 		return -1;
 	}
 
-#if DEBUG
+#if _DEBUG_
 	fprintf(stdout, "fb: %dx%d/%dbits, screen: %lu btyes, "
-		"mem start: %#08x\n", fbp->fb_vinfo.xres, fbp->fb_vinfo.yres,
+		"mem start: %p\n", fbp->fb_vinfo.xres, fbp->fb_vinfo.yres,
 		fbp->fb_vinfo.bits_per_pixel, fbp->fb_screensize, 
-		(unsigned int)fbp->fb_start);
+		fbp->fb_start);
 #endif
 
 	return 0;

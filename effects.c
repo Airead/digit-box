@@ -399,7 +399,7 @@ int effects_img_radiation(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int r
 int effects_img_rect(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag)
 {
 	int i, j;
-	int cx, cy;
+	int cx;
 	FB_RECT rect;
 	FB_POINT point1;
 
@@ -467,7 +467,6 @@ int effects_img_rect(FB_SCREEN *screenp, FB_IMAGE *imagep, int speed, int flag)
 		break;
 	case DB_EFFECTS_INNER:
 		cx = screenp->width / 2;
-		cy = screenp->height / 2;
 
 		for(i = 0; i < cx; i += speed){
 			for(j = 0; j < speed; j++){
@@ -505,7 +504,7 @@ int effects_img_abstract(FB_SCREEN *screenp, FB_IMAGE *imagep)
 	for(k = 0; k < 128; k++){
 		p = screenp->screenstart;
 		for(i = 0; i < screenp->height; i++){
-			for(j = 0; j < screenp->width; j++){
+			for(j = 0; j < screenp->fwidth; j++){
 				*p = *p - 2;
 				p++;
 				*p = *p - 2;

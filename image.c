@@ -67,7 +67,6 @@ int fb_image_transformm2(FB *fbp, FB_IMAGE *imagep, float hs, float vs)
 {
 	int i, j;
 	int x, y;
-	int x1, y1;
 	unsigned long location;
 	unsigned char *p;
 	float ex, ey;
@@ -76,8 +75,6 @@ int fb_image_transformm2(FB *fbp, FB_IMAGE *imagep, float hs, float vs)
 	tmpimagep = malloc(fbp->fb_screensize);
 
 	p = tmpimagep;
-	x1 = 0;
-	y1 = 0;
 	i = 0; j = 0;
 	ex = -0.5;
 	ey = -0.5;
@@ -249,8 +246,7 @@ int fb_image_rotate2(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian)
 	int ax, ay;
 	int ox, oy;
 	int h, l, centerx, centery;
-        unsigned long img_loc, ret_loc;
-	unsigned long adjust;
+    unsigned long img_loc, ret_loc;
 
 	ax = (retimgp->width - imagep->width) / 2;
 	ay = (retimgp->height - imagep->height) / 2;
@@ -268,7 +264,7 @@ int fb_image_rotate2(FB_IMAGE *imagep, FB_IMAGE *retimgp, float radian)
 
 	h = centerx = retimgp->width / 2;
 	l = centery = retimgp->height / 2;
-	adjust = (ay * retimgp->width + ax) * imagep->components;
+//	adjust = (ay * retimgp->width + ax) * imagep->components;
 	
 	for(i = 0; i < retimgp->height; i++){
 		for(j = 0; j < retimgp->width; j++){
